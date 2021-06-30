@@ -1,0 +1,6 @@
+struct euler_t
+{
+    boolean available;
+    float pitch;
+    float roll;
+}

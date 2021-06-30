@@ -1,0 +1,4 @@
+{
+    "python.formatting.provider": "black",
+    "python.pythonPath": "/home/lhcubillos/anaconda3/envs/coppelia_jaco/bin/python"
+}
