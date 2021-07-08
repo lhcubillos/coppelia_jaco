@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.decomposition import PCA
+# from sklearn.decomposition import PCA
 
 TOLERANCE = 0.02
 MAX_SPEED = 0.5

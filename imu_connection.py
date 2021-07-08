@@ -252,5 +252,5 @@ class IMUStream:
 
 
 if __name__ == "__main__":
-    imu_stream = IMUStream(60)
+    imu_stream = IMUStream(10)
     imu_stream.run()
