@@ -1,20 +1,18 @@
-import time
-from scipy.spatial.transform import Rotation as R
-from OpenGL.GLU import *
-from OpenGL.GL import *
-import math
-import copy
 import sys
+
 sys.path.append("./PythonAPIYost/")
 import threespace_api as ts_api
-import geometry_msgs.msg as gm
-import rospy
-
-# import pygame
-# from pygame.locals import *
-# import lcm
-# from lcmtypes.imus_t import imus_t
-# from lcmtypes.euler_t import euler_t
+import copy
+import pygame
+import math
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from pygame.locals import *
+from scipy.spatial.transform import Rotation as R
+import lcm
+from lcmtypes.imus_t import imus_t
+from lcmtypes.euler_t import euler_t
+import time
 
 ################################################################################
 ############### First streaming data over a wireless connection ################
@@ -47,12 +45,8 @@ class IMUStream:
         self.latest_data = [None for _ in range(8)]
         self.should_stop = False
 
-        # self.lc = lcm.LCM()
+        self.lc = lcm.LCM()
         self.period = 1.0 / frequency
-        self.publishers = [rospy.Publisher(
-            "yei_imu/" + str(i + 1), gm.Vector3, queue_size=200) for i in range(8)]
-        rospy.init_node("yei_imu_connection", anonymous=True)
-        # self.rate = rospy.Rate(frequency)
 
     def connect(self):
         self.dng = ts_api.TSDongle(com_port=PORT)
@@ -65,8 +59,7 @@ class IMUStream:
             imu_dev.setStreamingTiming(
                 interval=0, duration=0xFFFFFFFF, delay=0)
             imu_dev.setStreamingSlots(slot0="getTaredOrientationAsEulerAngles")
-        print("Found {} IMUs connected and started streaming".format(
-            len([1 for imu in self.imu_devices if imu is not None])))
+        print(self.imu_devices)
 
     def run(self):
         self.connect()
@@ -77,26 +70,33 @@ class IMUStream:
 
         try:
             t = time.time()
-            while not self.should_stop and not rospy.is_shutdown():
+            while not self.should_stop:
                 t += self.period
 
                 latest_data = []
-                for imu_dev, publisher in zip(self.imu_devices, self.publishers):
-                    # euler_msg = euler_t()
-                    if imu_dev is None or imu_dev.stream_last_data is None:
-                        latest_data.append(None)
-                        # euler_msg.available = False
-                    else:
-                        euler = imu_dev.stream_last_data[1]
-                        # This his how they did it in the Matlab program
-                        data = [euler[2] * -1, euler[0]]
-                        latest_data.append(data)
-                        # YPR
-                        msg = gm.Vector3(0, data[1], data[0])
-                        publisher.publish(msg)
-                self.latest_data = copy.copy(latest_data)
-                # print(self.latest_data)
-                time.sleep(max(0, t - time.time()))
+                msg = imus_t()
+                msg.utime = 0
+                msg.imu_values = []
+                try:
+                    for imu_dev in self.imu_devices:
+                        euler_msg = euler_t()
+                        if imu_dev is None or imu_dev.stream_last_data is None:
+                            latest_data.append(None)
+                            euler_msg.available = False
+                        else:
+                            euler = imu_dev.stream_last_data[1]
+                            # This his how they did it in the Matlab program
+                            data = [euler[2] * -1, euler[0]]
+                            latest_data.append(data)
+                            euler_msg.available = True
+                            euler_msg.pitch = data[1]
+                            euler_msg.roll = data[0]
+                        msg.imu_values.append(euler_msg)
+                    self.latest_data = copy.copy(latest_data)
+                    self.lc.publish("IMU", msg.encode())
+                    time.sleep(max(0, t - time.time()))
+                except KeyboardInterrupt:
+                    break
         finally:
             for imu_dev in self.imu_devices:
                 if imu_dev is not None:
@@ -254,3 +254,36 @@ class IMUStream:
 if __name__ == "__main__":
     imu_stream = IMUStream(60)
     imu_stream.run()
+
+# ## If a connection to the COM port fails, None is returned.
+# if dng_device is not None:
+#     ## Now this assumes that the Wireless device and Dongle device have already
+#     ## been paired previously.
+#     wl_device = dng_device[0]
+
+#     if wl_device is not None:
+#         ## Setting up the streaming session for getting the tared orientation
+#         ## of the Wireless device as a quaternion, the battery percent, and the
+#         ## button state
+#         ## setStreamingTiming(interval, duration, delay) in microseconds
+#         wl_device.setStreamingTiming(interval=0, duration=100000000, delay=0)
+#         wl_device.setStreamingSlots(
+#             slot0="getTaredOrientationAsQuaternion",
+#             slot1="getBatteryPercentRemaining",
+#             slot2="getButtonState",
+#         )
+#         wl_device.startStreaming()
+#         ## We can also record the data
+#         wl_device.startRecordingData()
+#         start_time = time.time()
+#         while time.time() - start_time < 5:
+#             # print(wl_device.stream_last_data)
+#             # print("=======================================\n")
+#             pass
+
+#         wl_device.stopRecordingData()
+#         wl_device.stopStreaming()
+#         print("stream_data length = {0}".format(len(wl_device.stream_data)))
+
+#     ## Now close the port.
+#     dng_device.close()

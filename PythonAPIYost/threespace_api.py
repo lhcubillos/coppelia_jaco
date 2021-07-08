@@ -25,7 +25,7 @@ import time
 import os
 
 # chose an implementation, depending on os
-if os.name == "nt":  # sys.platform == 'win32':
+if os.name == 'nt':  # sys.platform == 'win32':
     from win32_threespace_utils import *
 else:
     from threespace_utils import *
@@ -52,25 +52,12 @@ TSS_BUTTON_RIGHT = 1
 
 ### Private ###
 _baudrate = 115200
-_allowed_baudrates = [
-    1200,
-    2400,
-    4800,
-    9600,
-    19200,
-    28800,
-    38400,
-    57600,
-    115200,
-    230400,
-    460800,
-    921600,
-]
+_allowed_baudrates = [1200, 2400, 4800, 9600, 19200,
+                      28800, 38400, 57600, 115200, 230400, 460800, 921600]
 _wireless_retries = 5
 
 ### Functions ###
 if sys.version_info >= (3, 0):
-
     def makeWriteArray(startbyte, index_byte=None, command_byte=None, data=None):
         rtn_array = bytearray((startbyte,))
         if index_byte is not None:
@@ -82,10 +69,7 @@ if sys.version_info >= (3, 0):
         rtn_array.append((sum(rtn_array) - startbyte) % 256)  # checksum
         _hexDump(rtn_array)
         return rtn_array
-
-
 else:
-
     def makeWriteArray(startbyte, index_byte=None, command_byte=None, data=None):
         rtn_array = chr(startbyte)
         if index_byte is not None:
@@ -94,21 +78,22 @@ else:
             rtn_array += chr(command_byte)
         if data is not None:
             rtn_array += data
-        rtn_array += chr((sum(bytearray(rtn_array)) - startbyte) % 256)  # checksum
+        rtn_array += chr((sum(bytearray(rtn_array)) - startbyte) %
+                         256)  # checksum
         _hexDump(rtn_array)
         return rtn_array
 
 
-def _hexDump(serial_string, header="i"):
+def _hexDump(serial_string, header='i'):
     if "-d_hex" in sys.argv:
         ba = bytearray(serial_string)
-        print("{0}(".format(header), end="")
+        print('{0}('.format(header), end='')
         for i in range(len(ba)):
             if i == len(ba) - 1:
-                print("0x{0:02x}".format(ba[i]), end="")
+                print('0x{0:02x}'.format(ba[i]), end='')
             else:
-                print("0x{0:02x},".format(ba[i]), end="")
-        print(")")
+                print('0x{0:02x},'.format(ba[i]), end='')
+        print(')')
 
 
 def _print(string):
@@ -117,48 +102,46 @@ def _print(string):
 
 
 def _echoCallback(sensor, state):
-    _print("{0}:{1}".format(sensor, state))
+    _print('{0}:{1}'.format(sensor, state))
 
 
-def _generateProtocolHeader(
-    success_failure=False,
-    timestamp=False,
-    command_echo=False,
-    checksum=False,
-    logical_id=False,
-    serial_number=False,
-    data_length=False,
-):
+def _generateProtocolHeader(success_failure=False,
+                            timestamp=False,
+                            command_echo=False,
+                            checksum=False,
+                            logical_id=False,
+                            serial_number=False,
+                            data_length=False):
     byte = 0
-    struct_str = ">"
+    struct_str = '>'
     idx_list = []
     if success_failure:
         byte += 0x1
-        struct_str += "?"
+        struct_str += '?'
         idx_list.append(0)
     if timestamp:
         byte += 0x2
-        struct_str += "I"
+        struct_str += 'I'
         idx_list.append(1)
     if command_echo:
         byte += 0x4
-        struct_str += "B"
+        struct_str += 'B'
         idx_list.append(2)
     if checksum:
         byte += 0x8
-        struct_str += "B"
+        struct_str += 'B'
         idx_list.append(3)
     if logical_id:
         byte += 0x10
-        struct_str += "B"
+        struct_str += 'B'
         idx_list.append(4)
     if serial_number:
         byte += 0x20
-        struct_str += "I"
+        struct_str += 'I'
         idx_list.append(5)
     if data_length:
         byte += 0x40
-        struct_str += "B"
+        struct_str += 'B'
         idx_list.append(6)
     return (byte, struct.Struct(struct_str), idx_list)
 
@@ -170,18 +153,15 @@ def _generateSensorClass(sensor_inst, serial_port, allowed_device_types):
     sensor_inst.serial_port = serial_port
 
     hardware_version = convertString(
-        sensor_inst.f7WriteRead("getHardwareVersionString")
-    )
+        sensor_inst.f7WriteRead('getHardwareVersionString'))
     dev_type = hardware_version[4:-8].strip()
     if dev_type not in allowed_device_types:
-        raise Exception(
-            "This is a %s device, not one of these devices %s!"
-            % (dev_type, allowed_device_types)
-        )
+        raise Exception("This is a %s device, not one of these devices %s!" % (
+            dev_type, allowed_device_types))
 
     sensor_inst.device_type = dev_type
 
-    serial_number = sensor_inst.f7WriteRead("getSerialNumber")
+    serial_number = sensor_inst.f7WriteRead('getSerialNumber')
     sensor_inst.serial_number = serial_number
 
     if dev_type == "DNG":
@@ -344,9 +324,8 @@ class Broadcaster(object):
         if filter is None:
             filter = list(global_sensorlist.values())
         for sensor in filter:
-            q.queueWriteRead(
-                sensor, sensor.serial_number, self.retries, command, input_list
-            )
+            q.queueWriteRead(sensor, sensor.serial_number,
+                             self.retries, command, input_list)
         return q.proccessQueue()
 
     def _broadcastMethod(self, filter, method, default=None, *args):
@@ -370,57 +349,42 @@ class Broadcaster(object):
                 val_list[sensor.serial_number] = default
         return val_list
 
-    def broadcastMethod(
-        self, method, default=None, args=[], filter=None, callback_func=None
-    ):
+    def broadcastMethod(self, method, default=None, args=[], filter=None, callback_func=None):
         q = TSCommandQueue()
         if filter is None:
             filter = list(global_sensorlist.values())
         for sensor in filter:
-            q.queueMethod(
-                getattr(sensor, method),
-                sensor,
-                self.retries,
-                default,
-                args,
-                callback_func,
-            )
+            q.queueMethod(getattr(sensor, method),
+                          sensor,
+                          self.retries,
+                          default,
+                          args,
+                          callback_func)
         return q.proccessQueue()
 
-    def setStreamingSlots(
-        self,
-        slot0="null",
-        slot1="null",
-        slot2="null",
-        slot3="null",
-        slot4="null",
-        slot5="null",
-        slot6="null",
-        slot7="null",
-        filter=None,
-        callback_func=None,
-    ):
+    def setStreamingSlots(self, slot0='null',
+                          slot1='null',
+                          slot2='null',
+                          slot3='null',
+                          slot4='null',
+                          slot5='null',
+                          slot6='null',
+                          slot7='null',
+                          filter=None,
+                          callback_func=None):
         args = (slot0, slot1, slot2, slot3, slot4, slot5, slot6, slot7)
-        return self.broadcastMethod(
-            "setStreamingSlots", False, args, filter, callback_func
-        )
+        return self.broadcastMethod('setStreamingSlots', False, args, filter, callback_func)
 
     def getStreamingSlots(self, filter=None, callback_func=None):
-        return self.broadcastMethod(
-            "getStreamingSlots", None, [], filter, callback_func
-        )
+        return self.broadcastMethod('getStreamingSlots', None, [], filter, callback_func)
 
     def startStreaming(self, record_data=False, filter=None, callback_func=None):
-        return self.broadcastMethod(
-            "startStreaming", False, [record_data], filter, callback_func
-        )
+        return self.broadcastMethod('startStreaming', False, [record_data], filter, callback_func)
 
     def stopStreaming(self, filter=None, callback_func=None):
-        return self.broadcastMethod("stopStreaming", False, [], filter, callback_func)
+        return self.broadcastMethod('stopStreaming', False, [], filter, callback_func)
 
-    def setStreamingTiming(
-        self, interval, duration, delay, delay_offset, filter=None, callback_func=None
-    ):
+    def setStreamingTiming(self, interval, duration, delay, delay_offset, filter=None, callback_func=None):
         if filter is None:
             filter = list(global_sensorlist.values())
         else:
@@ -463,7 +427,7 @@ class Broadcaster(object):
 
     def debugPrint(self, broadcast_dict):
         for sensor, data in broadcast_dict.items():
-            _print("Sensor {0:08X}: {1}".format(sensor, data))
+            _print('Sensor {0:08X}: {1}'.format(sensor, data))
 
 
 class TSCommandQueue(object):
@@ -472,39 +436,14 @@ class TSCommandQueue(object):
         self.return_dict = {}
 
     def queueWriteRead(self, sensor, rtn_key, retries, command, input_list=None):
-        self.queue.append(
-            (
-                "queueWriteRead",
-                sensor,
-                (self.return_dict, rtn_key, retries, command, input_list),
-            )
-        )
+        self.queue.append(("queueWriteRead", sensor,
+                          (self.return_dict, rtn_key, retries, command, input_list)))
 
-    def queueMethod(
-        self,
-        method_obj,
-        rtn_key,
-        retries,
-        default=None,
-        input_list=None,
-        callback_func=None,
-    ):
-        self.queue.append(
-            (
-                "queueMethod",
-                (method_obj, rtn_key, retries, default, input_list, callback_func),
-            )
-        )
+    def queueMethod(self, method_obj, rtn_key, retries, default=None, input_list=None, callback_func=None):
+        self.queue.append(("queueMethod", (method_obj, rtn_key,
+                          retries, default, input_list, callback_func)))
 
-    def _queueMethod(
-        self,
-        method_obj,
-        rtn_key,
-        retries,
-        default=None,
-        input_list=None,
-        callback_func=None,
-    ):
+    def _queueMethod(self, method_obj, rtn_key, retries, default=None, input_list=None, callback_func=None):
         try:
             for i in range(retries):
                 packet = method_obj(*input_list)
@@ -519,8 +458,8 @@ class TSCommandQueue(object):
 
             else:
                 self.return_dict[rtn_key] = default
-        except (KeyboardInterrupt):
-            print("\n! Received keyboard interrupt, quitting threads.\n")
+        except(KeyboardInterrupt):
+            print('\n! Received keyboard interrupt, quitting threads.\n')
             raise KeyboardInterrupt  # fix bug where a thread eats the interupt
 
     def createThreads(self):
@@ -529,7 +468,8 @@ class TSCommandQueue(object):
             if item[0] == "queueWriteRead":
                 thread_queue.append(item[1].queueWriteRead(*item[2]))
             elif item[0] == "queueMethod":
-                qThread = threading.Thread(target=self._queueMethod, args=item[1])
+                qThread = threading.Thread(
+                    target=self._queueMethod, args=item[1])
                 thread_queue.append(qThread)
         return thread_queue
 
@@ -545,37 +485,33 @@ class TSCommandQueue(object):
 # Base class should not be used directly
 class _TSBase(object):
     command_dict = {
-        "checkLongCommands": (0x19, 1, ">B", 0, None, 1),
-        "startStreaming": (0x55, 0, None, 0, None, 1),
-        "stopStreaming": (0x56, 0, None, 0, None, 1),
-        "updateCurrentTimestamp": (0x5F, 0, None, 4, ">I", 1),
-        "setLEDMode": (0xC4, 0, None, 1, ">B", 1),
-        "getLEDMode": (0xC8, 1, ">B", 0, None, 1),
-        "_setWiredResponseHeaderBitfield": (0xDD, 0, None, 4, ">I", 1),
-        "_getWiredResponseHeaderBitfield": (0xDE, 4, ">I", 0, None, 1),
-        "getFirmwareVersionString": (0xDF, 12, ">12s", 0, None, 1),
-        "commitSettings": (0xE1, 0, None, 0, None, 1),
-        "softwareReset": (0xE2, 0, None, 0, None, 1),
-        "getHardwareVersionString": (0xE6, 32, ">32s", 0, None, 1),
-        "getSerialNumber": (0xED, 4, ">I", 0, None, 1),
-        "setLEDColor": (0xEE, 0, None, 12, ">fff", 1),
-        "getLEDColor": (0xEF, 12, ">fff", 0, None, 1),
-        "setJoystickAndMousePresentRemoved": (0xFD, 0, None, 2, ">BB", 1),
-        "getJoystickAndMousePresentRemoved": (0xFE, 2, ">B", 0, None, 1),
-        "null": (0xFF, 0, None, 0, None, 1),
+        'checkLongCommands': (0x19, 1, '>B', 0, None, 1),
+        'startStreaming': (0x55, 0, None, 0, None, 1),
+        'stopStreaming': (0x56, 0, None, 0, None, 1),
+        'updateCurrentTimestamp': (0x5f, 0, None, 4, '>I', 1),
+        'setLEDMode': (0xc4, 0, None, 1, '>B', 1),
+        'getLEDMode': (0xc8, 1, '>B', 0, None, 1),
+        '_setWiredResponseHeaderBitfield': (0xdd, 0, None, 4, '>I', 1),
+        '_getWiredResponseHeaderBitfield': (0xde, 4, '>I', 0, None, 1),
+        'getFirmwareVersionString': (0xdf, 12, '>12s', 0, None, 1),
+        'commitSettings': (0xe1, 0, None, 0, None, 1),
+        'softwareReset': (0xe2, 0, None, 0, None, 1),
+        'getHardwareVersionString': (0xe6, 32, '>32s', 0, None, 1),
+        'getSerialNumber': (0xed, 4, '>I', 0, None, 1),
+        'setLEDColor': (0xee, 0, None, 12, '>fff', 1),
+        'getLEDColor': (0xef, 12, '>fff', 0, None, 1),
+        'setJoystickAndMousePresentRemoved': (0xfd, 0, None, 2, '>BB', 1),
+        'getJoystickAndMousePresentRemoved': (0xfe, 2, '>B', 0, None, 1),
+        'null': (0xff, 0, None, 0, None, 1)
     }
 
-    def __init__(
-        self, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
-        self.protocol_args = {
-            "success_failure": True,
-            "timestamp": True,
-            "command_echo": True,
-            "data_length": True,
-        }
+    def __init__(self, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
+        self.protocol_args = {'success_failure': True,
+                              'timestamp': True,
+                              'command_echo': True,
+                              'data_length': True}
         if timestamp_mode != TSS_TIMESTAMP_SENSOR:
-            self.protocol_args["timestamp"] = False
+            self.protocol_args['timestamp'] = False
         self.timestamp_mode = timestamp_mode
         self.baudrate = baudrate
         reinit = False
@@ -594,45 +530,37 @@ class _TSBase(object):
                 self.setStreamingSlots(*self.stream_slot_cmds)
 
     def _setupBaseVariables(self):
-        self.serial_number_hex = "{0:08X}".format(self.serial_number)
+        self.serial_number_hex = '{0:08X}'.format(self.serial_number)
         self.stream_timing = None
         self.stream_parse = None
-        self.stream_slot_cmds = ["null"] * 8
+        self.stream_slot_cmds = ['null'] * 8
         self.stream_last_data = None
         self.stream_data = []
         self.record_data = False
         self.data_loop = False
 
-    def _setupProtocolHeader(
-        self,
-        success_failure=False,
-        timestamp=False,
-        command_echo=False,
-        checksum=False,
-        logical_id=False,
-        serial_number=False,
-        data_length=False,
-    ):
-        protocol_header = _generateProtocolHeader(
-            success_failure,
-            timestamp,
-            command_echo,
-            checksum,
-            logical_id,
-            serial_number,
-            data_length,
-        )
+    def _setupProtocolHeader(self, success_failure=False,
+                             timestamp=False,
+                             command_echo=False,
+                             checksum=False,
+                             logical_id=False,
+                             serial_number=False,
+                             data_length=False):
+        protocol_header = _generateProtocolHeader(success_failure,
+                                                  timestamp,
+                                                  command_echo,
+                                                  checksum,
+                                                  logical_id,
+                                                  serial_number,
+                                                  data_length)
         protocol_byte, self.header_parse, self.header_idx_lst = protocol_header
-        d_header = self.f7WriteRead("_getWiredResponseHeaderBitfield")
+        d_header = self.f7WriteRead('_getWiredResponseHeaderBitfield')
         if d_header != protocol_byte:
-            self.f7WriteRead("_setWiredResponseHeaderBitfield", protocol_byte)
-            d_header = self.f7WriteRead("_getWiredResponseHeaderBitfield")
+            self.f7WriteRead('_setWiredResponseHeaderBitfield', protocol_byte)
+            d_header = self.f7WriteRead('_getWiredResponseHeaderBitfield')
         if d_header != protocol_byte:
-            print(
-                "!!!!!fail d_header={0}, protocol_header_byte={1}".format(
-                    d_header, protocol_byte
-                )
-            )
+            print("!!!!!fail d_header={0}, protocol_header_byte={1}".format(
+                d_header, protocol_byte))
             raise Exception
 
     def _setupThreadedReadLoop(self):
@@ -663,8 +591,7 @@ class _TSBase(object):
             _print("tryport fail")
         try:
             serial_port = serial.Serial(
-                self.port_name, baudrate=self.baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                self.port_name, baudrate=self.baudrate, timeout=0.5, writeTimeout=0.5)
             serial_port.applySettingsDict(self.serial_port_settings)
             self.serial_port = serial_port
         except:
@@ -688,7 +615,7 @@ class _TSBase(object):
                 packed_data = struct.pack(in_struct, *input_list)
             else:
                 packed_data = struct.pack(in_struct, input_list)
-        write_array = makeWriteArray(0xF7, None, cmd_byte, packed_data)
+        write_array = makeWriteArray(0xf7, None, cmd_byte, packed_data)
         self.serial_port.write(write_array)
         if out_struct:
             output_data = self.serial_port.read(out_len)
@@ -705,16 +632,14 @@ class _TSBase(object):
         cmd_byte, out_len, out_struct, in_len, in_struct, compatibility = command_args
         if self.compatibility < compatibility:
             raise Exception(
-                "Firmware for device on ( %s ) is out of date for this function. Recommend updating to latest firmware."
-                % self.serial_port.name
-            )
+                "Firmware for device on ( %s ) is out of date for this function. Recommend updating to latest firmware." % self.serial_port.name)
         packed_data = None
         if in_struct:
             if type(input_list) in (list, tuple):
                 packed_data = struct.pack(in_struct, *input_list)
             else:
                 packed_data = struct.pack(in_struct, input_list)
-        write_array = makeWriteArray(0xF9, None, cmd_byte, packed_data)
+        write_array = makeWriteArray(0xf9, None, cmd_byte, packed_data)
         self.read_lock.acquire()
         uid = global_counter
         global_counter += 1
@@ -737,22 +662,22 @@ class _TSBase(object):
             # !!!!!Reconnect
             return (True, None, None)
         queue_packet = (uid, cmd_byte)
-        timeout_time = 0.5 + (
-            len(self.read_queue) * 0.150
-        )  # timeout increases as queue gets larger
+        # timeout increases as queue gets larger
+        timeout_time = 0.5 + (len(self.read_queue) * 0.150)
         self.read_queue.append(queue_packet)
-        start_time = time.perf_counter() + timeout_time
+        start_time = time.time() + timeout_time
         read_data = None
-        while timeout_time > 0:
+        while (timeout_time > 0):
             self.read_lock.wait(timeout_time)
             read_data = self.read_dict.get(uid, None)
 
             if read_data is not None:
                 break
-            timeout_time = start_time - time.perf_counter()
-            # _print("Still waiting {0} {1} {2}".format(uid, command, timeout_time))
+            timeout_time = start_time - time.time()
+            _print("Still waiting {0} {1} {2}".format(
+                uid, command, timeout_time))
         else:
-            # _print("Operation timed out!!!!")
+            _print("Operation timed out!!!!")
             try:
                 self.read_queue.remove(queue_packet)
             except:
@@ -789,244 +714,228 @@ class _TSBase(object):
             pass
         return False
 
-    ## generated functions USB and WL_ and DNG and EM_ and DL_ and BT_
-    ##  85(0x55)
+    # generated functions USB and WL_ and DNG and EM_ and DL_ and BT_
+    # 85(0x55)
     def stopStreaming(self):
-        fail_byte, t_stamp, data = self.writeRead("stopStreaming")
+        fail_byte, t_stamp, data = self.writeRead('stopStreaming')
         return not fail_byte
 
-    ##  86(0x56)
+    # 86(0x56)
     def startStreaming(self):
-        fail_byte, t_stamp, data = self.writeRead("startStreaming")
+        fail_byte, t_stamp, data = self.writeRead('startStreaming')
         return not fail_byte
 
-    ##  95(0x5f)
+    # 95(0x5f)
     def updateCurrentTimestamp(self, time, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("updateCurrentTimestamp", time)
+        fail_byte, t_stamp, data = self.writeRead(
+            'updateCurrentTimestamp', time)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 196(0xc4)
+    # 196(0xc4)
     def setLEDMode(self, mode, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setLEDMode", mode)
+        fail_byte, t_stamp, data = self.writeRead('setLEDMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 200(0xc8)
+    # 200(0xc8)
     def getLEDMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getLEDMode")
+        fail_byte, t_stamp, data = self.writeRead('getLEDMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 223(0xdf)
+    # 223(0xdf)
     def getFirmwareVersionString(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getFirmwareVersionString")
+        fail_byte, t_stamp, data = self.writeRead('getFirmwareVersionString')
         data = convertString(data)
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 225(0xe1)
+    # 225(0xe1)
     def commitSettings(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("commitSettings")
+        fail_byte, t_stamp, data = self.writeRead('commitSettings')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 230(0xe6)
+    # 230(0xe6)
     def getHardwareVersionString(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getHardwareVersionString")
+        fail_byte, t_stamp, data = self.writeRead('getHardwareVersionString')
         data = convertString(data)
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 237(0xed)
+    # 237(0xed)
     def getSerialNumber(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getSerialNumber")
+        fail_byte, t_stamp, data = self.writeRead('getSerialNumber')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 238(0xee)
+    # 238(0xee)
     def setLEDColor(self, rgb, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setLEDColor", rgb)
+        fail_byte, t_stamp, data = self.writeRead('setLEDColor', rgb)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 239(0xef)
+    # 239(0xef)
     def getLEDColor(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getLEDColor")
+        fail_byte, t_stamp, data = self.writeRead('getLEDColor')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 253(0xfd)
+    # 253(0xfd)
     def setJoystickAndMousePresentRemoved(self, joystick, mouse, timestamp=False):
         arg_list = (joystick, mouse)
         fail_byte, t_stamp, data = self.writeRead(
-            "setJoystickAndMousePresentRemoved", arg_list
-        )
+            'setJoystickAndMousePresentRemoved', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 254(0xfe)
+    # 254(0xfe)
     def getJoystickAndMousePresentRemoved(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getJoystickAndMousePresentRemoved")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getJoystickAndMousePresentRemoved')
         if timestamp:
             return (data, t_stamp)
         return data
 
 
-## END generated functions USB and WL_ and DNG and EM_ and DL_ and BT_
+# END generated functions USB and WL_ and DNG and EM_ and DL_ and BT_
 
 
 class _TSSensor(_TSBase):
     command_dict = _TSBase.command_dict.copy()
-    command_dict.update(
-        {
-            "getTaredOrientationAsQuaternion": (0x0, 16, ">4f", 0, None, 1),
-            "getTaredOrientationAsEulerAngles": (0x1, 12, ">fff", 0, None, 1),
-            "getTaredOrientationAsRotationMatrix": (0x2, 36, ">9f", 0, None, 1),
-            "getTaredOrientationAsAxisAngle": (0x3, 16, ">4f", 0, None, 1),
-            "getTaredOrientationAsTwoVector": (0x4, 24, ">6f", 0, None, 1),
-            "getDifferenceQuaternion": (0x5, 16, ">4f", 0, None, 1),
-            "getUntaredOrientationAsQuaternion": (0x6, 16, ">4f", 0, None, 1),
-            "getUntaredOrientationAsEulerAngles": (0x7, 12, ">fff", 0, None, 1),
-            "getUntaredOrientationAsRotationMatrix": (0x8, 36, ">9f", 0, None, 1),
-            "getUntaredOrientationAsAxisAngle": (0x9, 16, ">4f", 0, None, 1),
-            "getUntaredOrientationAsTwoVector": (0xA, 24, ">6f", 0, None, 1),
-            "getTaredTwoVectorInSensorFrame": (0xB, 24, ">6f", 0, None, 1),
-            "getUntaredTwoVectorInSensorFrame": (0xC, 24, ">6f", 0, None, 1),
-            "setEulerAngleDecompositionOrder": (0x10, 0, None, 1, ">B", 1),
-            "setMagnetoresistiveThreshold": (0x11, 0, None, 16, ">fIff", 3),
-            "setAccelerometerResistanceThreshold": (0x12, 0, None, 8, ">fI", 3),
-            "offsetWithCurrentOrientation": (0x13, 0, None, 0, None, 3),
-            "resetBaseOffset": (0x14, 0, None, 0, None, 3),
-            "offsetWithQuaternion": (0x15, 0, None, 16, ">4f", 3),
-            "setBaseOffsetWithCurrentOrientation": (0x16, 0, None, 0, None, 3),
-            "getAllNormalizedComponentSensorData": (0x20, 36, ">9f", 0, None, 1),
-            "getNormalizedGyroRate": (0x21, 12, ">fff", 0, None, 1),
-            "getNormalizedAccelerometerVector": (0x22, 12, ">fff", 0, None, 1),
-            "getNormalizedCompassVector": (0x23, 12, ">fff", 0, None, 1),
-            "getAllCorrectedComponentSensorData": (0x25, 36, ">9f", 0, None, 1),
-            "getCorrectedGyroRate": (0x26, 12, ">fff", 0, None, 1),
-            "getCorrectedAccelerometerVector": (0x27, 12, ">fff", 0, None, 1),
-            "getCorrectedCompassVector": (0x28, 12, ">fff", 0, None, 1),
-            "getCorrectedLinearAccelerationInGlobalSpace": (
-                0x29,
-                12,
-                ">fff",
-                0,
-                None,
-                1,
-            ),
-            "getTemperatureC": (0x2B, 4, ">f", 0, None, 1),
-            "getTemperatureF": (0x2C, 4, ">f", 0, None, 1),
-            "getConfidenceFactor": (0x2D, 4, ">f", 0, None, 1),
-            "getAllRawComponentSensorData": (0x40, 36, ">9f", 0, None, 1),
-            "getRawGyroscopeRate": (0x41, 12, ">fff", 0, None, 1),
-            "getRawAccelerometerData": (0x42, 12, ">fff", 0, None, 1),
-            "getRawCompassData": (0x43, 12, ">fff", 0, None, 1),
-            "_setStreamingSlots": (0x50, 0, None, 8, ">8B", 1),
-            "_getStreamingSlots": (0x51, 8, ">8B", 0, None, 1),
-            "_setStreamingTiming": (0x52, 0, None, 12, ">III", 1),
-            "_getStreamingTiming": (0x53, 12, ">III", 0, None, 1),
-            "_getStreamingBatch": (0x54, 0, None, 0, None, 1),
-            "tareWithCurrentOrientation": (0x60, 0, None, 0, None, 1),
-            "tareWithQuaternion": (0x61, 0, None, 16, ">4f", 1),
-            "tareWithRotationMatrix": (0x62, 0, None, 36, ">9f", 1),
-            "setStaticAccelerometerTrustValue": (0x63, 0, None, 4, ">f", 2),
-            "setConfidenceAccelerometerTrustValues": (0x64, 0, None, 8, ">ff", 2),
-            "setStaticCompassTrustValue": (0x65, 0, None, 4, ">f", 2),
-            "setConfidenceCompassTrustValues": (0x66, 0, None, 8, ">ff", 2),
-            "setDesiredUpdateRate": (0x67, 0, None, 4, ">I", 1),
-            "setReferenceVectorMode": (0x69, 0, None, 1, ">B", 1),
-            "setOversampleRate": (0x6A, 0, None, 1, ">B", 1),
-            "setGyroscopeEnabled": (0x6B, 0, None, 1, ">B", 1),
-            "setAccelerometerEnabled": (0x6C, 0, None, 1, ">B", 1),
-            "setCompassEnabled": (0x6D, 0, None, 1, ">B", 1),
-            "setAxisDirections": (0x74, 0, None, 1, ">B", 1),
-            "setRunningAveragePercent": (0x75, 0, None, 4, ">f", 1),
-            "setCompassReferenceVector": (0x76, 0, None, 12, ">fff", 1),
-            "setAccelerometerReferenceVector": (0x77, 0, None, 12, ">fff", 1),
-            "resetKalmanFilter": (0x78, 0, None, 0, None, 1),
-            "setAccelerometerRange": (0x79, 0, None, 1, ">B", 1),
-            "setFilterMode": (0x7B, 0, None, 1, ">B", 1),
-            "setRunningAverageMode": (0x7C, 0, None, 1, ">B", 1),
-            "setGyroscopeRange": (0x7D, 0, None, 1, ">B", 1),
-            "setCompassRange": (0x7E, 0, None, 1, ">B", 1),
-            "getTareAsQuaternion": (0x80, 16, ">4f", 0, None, 1),
-            "getTareAsRotationMatrix": (0x81, 36, ">9f", 0, None, 1),
-            "getAccelerometerTrustValues": (0x82, 8, ">ff", 0, None, 2),
-            "getCompassTrustValues": (0x83, 8, ">ff", 0, None, 2),
-            "getCurrentUpdateRate": (0x84, 4, ">I", 0, None, 1),
-            "getCompassReferenceVector": (0x85, 12, ">fff", 0, None, 1),
-            "getAccelerometerReferenceVector": (0x86, 12, ">fff", 0, None, 1),
-            "getGyroscopeEnabledState": (0x8C, 1, ">B", 0, None, 1),
-            "getAccelerometerEnabledState": (0x8D, 1, ">B", 0, None, 1),
-            "getCompassEnabledState": (0x8E, 1, ">B", 0, None, 1),
-            "getAxisDirections": (0x8F, 1, ">B", 0, None, 1),
-            "getOversampleRate": (0x90, 1, ">B", 0, None, 1),
-            "getRunningAveragePercent": (0x91, 4, ">f", 0, None, 1),
-            "getDesiredUpdateRate": (0x92, 4, ">I", 0, None, 1),
-            "getAccelerometerRange": (0x94, 1, ">B", 0, None, 1),
-            "getFilterMode": (0x98, 1, ">B", 0, None, 1),
-            "getRunningAverageMode": (0x99, 1, ">B", 0, None, 1),
-            "getGyroscopeRange": (0x9A, 1, ">B", 0, None, 1),
-            "getCompassRange": (0x9B, 1, ">B", 0, None, 1),
-            "getEulerAngleDecompositionOrder": (0x9C, 1, ">B", 0, None, 1),
-            "getMagnetoresistiveThreshold": (0x9D, 16, ">fIff", 0, None, 3),
-            "getAccelerometerResistanceThreshold": (0x9E, 8, ">fI", 0, None, 3),
-            "getOffsetOrientationAsQuaternion": (0x9F, 16, ">4f", 0, None, 3),
-            "setCompassCalibrationCoefficients": (0xA0, 0, None, 48, ">12f", 1),
-            "setAccelerometerCalibrationCoefficients": (0xA1, 0, None, 48, ">12f", 1),
-            "getCompassCalibrationCoefficients": (0xA2, 48, ">12f", 0, None, 1),
-            "getAccelerometerCalibrationCoefficients": (0xA3, 48, ">12f", 0, None, 1),
-            "getGyroscopeCalibrationCoefficients": (0xA4, 48, ">12f", 0, None, 1),
-            "beginGyroscopeAutoCalibration": (0xA5, 0, None, 0, None, 1),
-            "setGyroscopeCalibrationCoefficients": (0xA6, 0, None, 48, ">12f", 1),
-            "setCalibrationMode": (0xA9, 0, None, 1, ">B", 1),
-            "getCalibrationMode": (0xAA, 1, ">B", 0, None, 1),
-            "setOrthoCalibrationDataPointFromCurrentOrientation": (
-                0xAB,
-                0,
-                None,
-                0,
-                None,
-                1,
-            ),
-            "setOrthoCalibrationDataPointFromVector": (0xAC, 0, None, 14, ">BBfff", 1),
-            "getOrthoCalibrationDataPoint": (0xAD, 12, ">fff", 2, ">BB", 1),
-            "performOrthoCalibration": (0xAE, 0, None, 0, None, 1),
-            "clearOrthoCalibrationData": (0xAF, 0, None, 0, None, 1),
-            "setSleepMode": (0xE3, 0, None, 1, ">B", 1),
-            "getSleepMode": (0xE4, 1, ">B", 0, None, 1),
-            "setJoystickEnabled": (0xF0, 0, None, 1, ">B", 1),
-            "setMouseEnabled": (0xF1, 0, None, 1, ">B", 1),
-            "getJoystickEnabled": (0xF2, 1, ">B", 0, None, 1),
-            "getMouseEnabled": (0xF3, 1, ">B", 0, None, 1),
-            "setControlMode": (0xF4, 0, None, 3, ">BBB", 1),
-            "setControlData": (0xF5, 0, None, 7, ">BBBf", 1),
-            "getControlMode": (0xF6, 1, ">B", 2, ">BB", 1),
-            "getControlData": (0xF7, 4, ">f", 3, ">BBB", 1),
-            "setMouseAbsoluteRelativeMode": (0xFB, 0, None, 1, ">B", 1),
-            "getMouseAbsoluteRelativeMode": (0xFC, 1, ">B", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        'getTaredOrientationAsQuaternion': (0x0, 16, '>4f', 0, None, 1),
+        'getTaredOrientationAsEulerAngles': (0x1, 12, '>fff', 0, None, 1),
+        'getTaredOrientationAsRotationMatrix': (0x2, 36, '>9f', 0, None, 1),
+        'getTaredOrientationAsAxisAngle': (0x3, 16, '>4f', 0, None, 1),
+        'getTaredOrientationAsTwoVector': (0x4, 24, '>6f', 0, None, 1),
+        'getDifferenceQuaternion': (0x5, 16, '>4f', 0, None, 1),
+        'getUntaredOrientationAsQuaternion': (0x6, 16, '>4f', 0, None, 1),
+        'getUntaredOrientationAsEulerAngles': (0x7, 12, '>fff', 0, None, 1),
+        'getUntaredOrientationAsRotationMatrix': (0x8, 36, '>9f', 0, None, 1),
+        'getUntaredOrientationAsAxisAngle': (0x9, 16, '>4f', 0, None, 1),
+        'getUntaredOrientationAsTwoVector': (0xa, 24, '>6f', 0, None, 1),
+        'getTaredTwoVectorInSensorFrame': (0xb, 24, '>6f', 0, None, 1),
+        'getUntaredTwoVectorInSensorFrame': (0xc, 24, '>6f', 0, None, 1),
+        'setEulerAngleDecompositionOrder': (0x10, 0, None, 1, '>B', 1),
+        'setMagnetoresistiveThreshold': (0x11, 0, None, 16, '>fIff', 3),
+        'setAccelerometerResistanceThreshold': (0x12, 0, None, 8, '>fI', 3),
+        'offsetWithCurrentOrientation': (0x13, 0, None, 0, None, 3),
+        'resetBaseOffset': (0x14, 0, None, 0, None, 3),
+        'offsetWithQuaternion': (0x15, 0, None, 16, '>4f', 3),
+        'setBaseOffsetWithCurrentOrientation': (0x16, 0, None, 0, None, 3),
+        'getAllNormalizedComponentSensorData': (0x20, 36, '>9f', 0, None, 1),
+        'getNormalizedGyroRate': (0x21, 12, '>fff', 0, None, 1),
+        'getNormalizedAccelerometerVector': (0x22, 12, '>fff', 0, None, 1),
+        'getNormalizedCompassVector': (0x23, 12, '>fff', 0, None, 1),
+        'getAllCorrectedComponentSensorData': (0x25, 36, '>9f', 0, None, 1),
+        'getCorrectedGyroRate': (0x26, 12, '>fff', 0, None, 1),
+        'getCorrectedAccelerometerVector': (0x27, 12, '>fff', 0, None, 1),
+        'getCorrectedCompassVector': (0x28, 12, '>fff', 0, None, 1),
+        'getCorrectedLinearAccelerationInGlobalSpace': (0x29, 12, '>fff', 0, None, 1),
+        'getTemperatureC': (0x2b, 4, '>f', 0, None, 1),
+        'getTemperatureF': (0x2c, 4, '>f', 0, None, 1),
+        'getConfidenceFactor': (0x2d, 4, '>f', 0, None, 1),
+        'getAllRawComponentSensorData': (0x40, 36, '>9f', 0, None, 1),
+        'getRawGyroscopeRate': (0x41, 12, '>fff', 0, None, 1),
+        'getRawAccelerometerData': (0x42, 12, '>fff', 0, None, 1),
+        'getRawCompassData': (0x43, 12, '>fff', 0, None, 1),
+        '_setStreamingSlots': (0x50, 0, None, 8, '>8B', 1),
+        '_getStreamingSlots': (0x51, 8, '>8B', 0, None, 1),
+        '_setStreamingTiming': (0x52, 0, None, 12, '>III', 1),
+        '_getStreamingTiming': (0x53, 12, '>III', 0, None, 1),
+        '_getStreamingBatch': (0x54, 0, None, 0, None, 1),
+        'tareWithCurrentOrientation': (0x60, 0, None, 0, None, 1),
+        'tareWithQuaternion': (0x61, 0, None, 16, '>4f', 1),
+        'tareWithRotationMatrix': (0x62, 0, None, 36, '>9f', 1),
+        'setStaticAccelerometerTrustValue': (0x63, 0, None, 4, '>f', 2),
+        'setConfidenceAccelerometerTrustValues': (0x64, 0, None, 8, '>ff', 2),
+        'setStaticCompassTrustValue': (0x65, 0, None, 4, '>f', 2),
+        'setConfidenceCompassTrustValues': (0x66, 0, None, 8, '>ff', 2),
+        'setDesiredUpdateRate': (0x67, 0, None, 4, '>I', 1),
+        'setReferenceVectorMode': (0x69, 0, None, 1, '>B', 1),
+        'setOversampleRate': (0x6a, 0, None, 1, '>B', 1),
+        'setGyroscopeEnabled': (0x6b, 0, None, 1, '>B', 1),
+        'setAccelerometerEnabled': (0x6c, 0, None, 1, '>B', 1),
+        'setCompassEnabled': (0x6d, 0, None, 1, '>B', 1),
+        'setAxisDirections': (0x74, 0, None, 1, '>B', 1),
+        'setRunningAveragePercent': (0x75, 0, None, 4, '>f', 1),
+        'setCompassReferenceVector': (0x76, 0, None, 12, '>fff', 1),
+        'setAccelerometerReferenceVector': (0x77, 0, None, 12, '>fff', 1),
+        'resetKalmanFilter': (0x78, 0, None, 0, None, 1),
+        'setAccelerometerRange': (0x79, 0, None, 1, '>B', 1),
+        'setFilterMode': (0x7b, 0, None, 1, '>B', 1),
+        'setRunningAverageMode': (0x7c, 0, None, 1, '>B', 1),
+        'setGyroscopeRange': (0x7d, 0, None, 1, '>B', 1),
+        'setCompassRange': (0x7e, 0, None, 1, '>B', 1),
+        'getTareAsQuaternion': (0x80, 16, '>4f', 0, None, 1),
+        'getTareAsRotationMatrix': (0x81, 36, '>9f', 0, None, 1),
+        'getAccelerometerTrustValues': (0x82, 8, '>ff', 0, None, 2),
+        'getCompassTrustValues': (0x83, 8, '>ff', 0, None, 2),
+        'getCurrentUpdateRate': (0x84, 4, '>I', 0, None, 1),
+        'getCompassReferenceVector': (0x85, 12, '>fff', 0, None, 1),
+        'getAccelerometerReferenceVector': (0x86, 12, '>fff', 0, None, 1),
+        'getGyroscopeEnabledState': (0x8c, 1, '>B', 0, None, 1),
+        'getAccelerometerEnabledState': (0x8d, 1, '>B', 0, None, 1),
+        'getCompassEnabledState': (0x8e, 1, '>B', 0, None, 1),
+        'getAxisDirections': (0x8f, 1, '>B', 0, None, 1),
+        'getOversampleRate': (0x90, 1, '>B', 0, None, 1),
+        'getRunningAveragePercent': (0x91, 4, '>f', 0, None, 1),
+        'getDesiredUpdateRate': (0x92, 4, '>I', 0, None, 1),
+        'getAccelerometerRange': (0x94, 1, '>B', 0, None, 1),
+        'getFilterMode': (0x98, 1, '>B', 0, None, 1),
+        'getRunningAverageMode': (0x99, 1, '>B', 0, None, 1),
+        'getGyroscopeRange': (0x9a, 1, '>B', 0, None, 1),
+        'getCompassRange': (0x9b, 1, '>B', 0, None, 1),
+        'getEulerAngleDecompositionOrder': (0x9c, 1, '>B', 0, None, 1),
+        'getMagnetoresistiveThreshold': (0x9d, 16, '>fIff', 0, None, 3),
+        'getAccelerometerResistanceThreshold': (0x9e, 8, '>fI', 0, None, 3),
+        'getOffsetOrientationAsQuaternion': (0x9f, 16, '>4f', 0, None, 3),
+        'setCompassCalibrationCoefficients': (0xa0, 0, None, 48, '>12f', 1),
+        'setAccelerometerCalibrationCoefficients': (0xa1, 0, None, 48, '>12f', 1),
+        'getCompassCalibrationCoefficients': (0xa2, 48, '>12f', 0, None, 1),
+        'getAccelerometerCalibrationCoefficients': (0xa3, 48, '>12f', 0, None, 1),
+        'getGyroscopeCalibrationCoefficients': (0xa4, 48, '>12f', 0, None, 1),
+        'beginGyroscopeAutoCalibration': (0xa5, 0, None, 0, None, 1),
+        'setGyroscopeCalibrationCoefficients': (0xa6, 0, None, 48, '>12f', 1),
+        'setCalibrationMode': (0xa9, 0, None, 1, '>B', 1),
+        'getCalibrationMode': (0xaa, 1, '>B', 0, None, 1),
+        'setOrthoCalibrationDataPointFromCurrentOrientation': (0xab, 0, None, 0, None, 1),
+        'setOrthoCalibrationDataPointFromVector': (0xac, 0, None, 14, '>BBfff', 1),
+        'getOrthoCalibrationDataPoint': (0xad, 12, '>fff', 2, '>BB', 1),
+        'performOrthoCalibration': (0xae, 0, None, 0, None, 1),
+        'clearOrthoCalibrationData': (0xaf, 0, None, 0, None, 1),
+        'setSleepMode': (0xe3, 0, None, 1, '>B', 1),
+        'getSleepMode': (0xe4, 1, '>B', 0, None, 1),
+        'setJoystickEnabled': (0xf0, 0, None, 1, '>B', 1),
+        'setMouseEnabled': (0xf1, 0, None, 1, '>B', 1),
+        'getJoystickEnabled': (0xf2, 1, '>B', 0, None, 1),
+        'getMouseEnabled': (0xf3, 1, '>B', 0, None, 1),
+        'setControlMode': (0xf4, 0, None, 3, '>BBB', 1),
+        'setControlData': (0xf5, 0, None, 7, '>BBBf', 1),
+        'getControlMode': (0xf6, 1, '>B', 2, '>BB', 1),
+        'getControlData': (0xf7, 4, '>f', 3, '>BBB', 1),
+        'setMouseAbsoluteRelativeMode': (0xfb, 0, None, 1, '>B', 1),
+        'getMouseAbsoluteRelativeMode': (0xfc, 1, '>B', 0, None, 1)
+    })
 
-    reverse_command_dict = dict(map(lambda x: [x[1][0], x[0]], command_dict.items()))
+    reverse_command_dict = dict(
+        map(lambda x: [x[1][0], x[0]], command_dict.items()))
 
     _device_types = ["!BASE"]
 
-    def __new__(
-        cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
         if com_port:
             if type(com_port) is str:
                 port_name = com_port
@@ -1039,26 +948,19 @@ class _TSSensor(_TSBase):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5)
             if serial_port is not None:
                 new_inst = super(_TSSensor, cls).__new__(cls)
-                return _generateSensorClass(
-                    new_inst, serial_port, _TSSensor._device_types
-                )
-        _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, _TSSensor._device_types)
+        _print('Error serial port was not made')
 
-    def __init__(
-        self, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
-        self.protocol_args = {
-            "success_failure": True,
-            "timestamp": True,
-            "command_echo": True,
-            "data_length": True,
-        }
+    def __init__(self, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
+        self.protocol_args = {'success_failure': True,
+                              'timestamp': True,
+                              'command_echo': True,
+                              'data_length': True}
         if timestamp_mode != TSS_TIMESTAMP_SENSOR:
-            self.protocol_args["timestamp"] = False
+            self.protocol_args['timestamp'] = False
         self.timestamp_mode = timestamp_mode
         self.baudrate = baudrate
         reinit = False
@@ -1092,34 +994,25 @@ class _TSSensor(_TSBase):
             else:
                 # _print("sensor failed to succeed")
                 rtn_dict[rtn_key] = (True, None, None)
-        except (KeyboardInterrupt):
-            print("\n! Received keyboard interrupt, quitting threads.\n")
+        except(KeyboardInterrupt):
+            print('\n! Received keyboard interrupt, quitting threads.\n')
             raise KeyboardInterrupt  # fix bug where a thread eats the interupt
 
     def queueWriteRead(self, rtn_dict, rtn_key, retries, command, input_list=None):
-        return threading.Thread(
-            target=self._queueWriteRead,
-            args=(rtn_dict, rtn_key, retries, command, input_list),
-        )
+        return threading.Thread(target=self._queueWriteRead, args=(rtn_dict, rtn_key, retries, command, input_list))
 
     def _generateStreamParse(self):
-        stream_string = ">"
+        stream_string = '>'
         if self.stream_slot_cmds is None:
             self.getStreamingSlots()
         for slot_cmd in self.stream_slot_cmds:
-            if slot_cmd != "null":
+            if slot_cmd is not 'null':
                 out_struct = self.command_dict[slot_cmd][2]
                 stream_string += out_struct[1:]  # stripping the >
         self.stream_parse = struct.Struct(stream_string)
         # Set streaming batch command
-        self.command_dict["_getStreamingBatch"] = (
-            0x54,
-            self.stream_parse.size,
-            stream_string,
-            0,
-            None,
-            1,
-        )
+        self.command_dict['_getStreamingBatch'] = (
+            0x54, self.stream_parse.size, stream_string, 0, None, 1)
 
     def _parseStreamData(self, protocol_data, output_data):
         rtn_list = self.stream_parse.unpack(output_data)
@@ -1141,8 +1034,8 @@ class _TSSensor(_TSBase):
         while self.data_loop:
             try:
                 self._readDataWiredProHeader()
-            except (KeyboardInterrupt):
-                print("\n! Received keyboard interrupt, quitting threads.\n")
+            except(KeyboardInterrupt):
+                print('\n! Received keyboard interrupt, quitting threads.\n')
                 raise KeyboardInterrupt  # fix bug where a thread eats the interupt
             except:
                 # traceback.print_exc()
@@ -1165,26 +1058,17 @@ class _TSSensor(_TSBase):
                 header_data = self.header_parse.unpack(header_bytes)
                 header_list = padProtocolHeader71(header_data)
             elif self.timestamp_mode == TSS_TIMESTAMP_SYSTEM:
-                sys_timestamp = (
-                    time.perf_counter()
-                )  # time packet was parsed it might been in the system buffer a few ms
+                # time packet was parsed it might been in the system buffer a few ms
+                sys_timestamp = time.time()
                 sys_timestamp *= 1000000
                 header_data = self.header_parse.unpack(header_bytes)
                 header_list = padProtocolHeader69(header_data, sys_timestamp)
             else:
                 header_data = self.header_parse.unpack(header_bytes)
                 header_list = padProtocolHeader69(header_data, None)
-            (
-                fail_byte,
-                timestamp,
-                cmd_echo,
-                ck_sum,
-                rtn_log_id,
-                sn,
-                data_size,
-            ) = header_list
+            fail_byte, timestamp, cmd_echo, ck_sum, rtn_log_id, sn, data_size = header_list
             output_data = _serial_port.read(data_size)
-            if cmd_echo == 0xFF:
+            if cmd_echo is 0xff:
                 if data_size:
                     self._parseStreamData(timestamp, output_data)
                 return
@@ -1227,43 +1111,41 @@ class _TSSensor(_TSBase):
         self.stream_data = []
 
     # Convenience functions to replace commands 244(0xf4) and 245(0xf5)
-    def setGlobalAxis(
-        self, hid_type, config_axis, local_axis, global_axis, deadzone, scale, power
-    ):
-        """Sets an axis of the desired emulated input device as a 'Global Axis'
-        style axis. Axis operating under this style use a reference vector
-        and a consitent local vector to determine the state of the device's
-        axis. As the local vector rotates, it is projected onto the global
-        vector. Once the distance of that projection on the global vector
-        exceeds the inputted "deadzone", the device will begin tranmitting
-        non-zero values for the device's desired axis.
+    def setGlobalAxis(self, hid_type, config_axis, local_axis, global_axis, deadzone, scale, power):
+        """ Sets an axis of the desired emulated input device as a 'Global Axis'
+            style axis. Axis operating under this style use a reference vector
+            and a consitent local vector to determine the state of the device's
+            axis. As the local vector rotates, it is projected onto the global
+            vector. Once the distance of that projection on the global vector
+            exceeds the inputted "deadzone", the device will begin tranmitting
+            non-zero values for the device's desired axis.
 
-        @param hid_type: An integer whose value defines whether the device
-            in question is a TSS_JOYSTICK or TSS_MOUSE.
+            @param hid_type: An integer whose value defines whether the device
+                in question is a TSS_JOYSTICK or TSS_MOUSE.
 
-        @param config_axis: A string whose value may be either 'X' or 'Y'
-            for a mouse or 'X', 'Y', or 'Z' for a joystick. This string
-            defines what axis of the device is to be configured.
+            @param config_axis: A string whose value may be either 'X' or 'Y'
+                for a mouse or 'X', 'Y', or 'Z' for a joystick. This string
+                defines what axis of the device is to be configured.
 
-        @param local_axis: A list of 3 Floats whose value is a normalized
-            Vector3. This vector represents the sensor's local vector to
-            track.
+            @param local_axis: A list of 3 Floats whose value is a normalized
+                Vector3. This vector represents the sensor's local vector to
+                track.
 
-        @param global_axis: A list of 3 Floats whose value is a normalized
-            Vector3. This vector represents the global vector to project the
-            local vector onto (should be orthoginal to the local vector).
+            @param global_axis: A list of 3 Floats whose value is a normalized
+                Vector3. This vector represents the global vector to project the
+                local vector onto (should be orthoginal to the local vector).
 
-        @param deadzone: A float that defines the minimum distance necessary
-            for the device's axis to read a non-zero value.
+            @param deadzone: A float that defines the minimum distance necessary
+                for the device's axis to read a non-zero value.
 
-        @param scale: A float that defines the linear scale for the values
-            being returned for the axis.
+            @param scale: A float that defines the linear scale for the values
+                being returned for the axis.
 
-        @param power: A float whose value is an exponental power used to
-            further modify data being returned from the sensor.
+            @param power: A float whose value is an exponental power used to
+                further modify data being returned from the sensor.
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         # Set class
         if hid_type != TSS_JOYSTICK and hid_type != TSS_MOUSE:
@@ -1279,7 +1161,8 @@ class _TSSensor(_TSBase):
         try:
             cntl_idx = axis_idx.index(config_axis)
         except:
-            _print("Invalid command for config_axis: {0:s}".format(config_axis))
+            _print(
+                "Invalid command for config_axis: {0:s}".format(config_axis))
             return False
 
         # Set mode
@@ -1295,56 +1178,47 @@ class _TSSensor(_TSBase):
                 return False
         return True
 
-    def setScreenPointAxis(
-        self,
-        hid_type,
-        config_axis,
-        dist_from_screen,
-        dist_on_axis,
-        collision_component,
-        sensor_dir,
-        button_halt,
-    ):
-        """Sets an axis of the desired emulated input device as a 'Screen Point
-        Axis' style axis. An axis operating under this style projects a
-        vector along the sensor's direction vector into a mathmatical plane.
-        The collision point on the plane is then used to determine what the
-        device's axis's current value is. The direction vector is rotated
-        based on the orientation of the sensor.
+    def setScreenPointAxis(self, hid_type, config_axis, dist_from_screen, dist_on_axis, collision_component, sensor_dir, button_halt):
+        """ Sets an axis of the desired emulated input device as a 'Screen Point
+            Axis' style axis. An axis operating under this style projects a
+            vector along the sensor's direction vector into a mathmatical plane.
+            The collision point on the plane is then used to determine what the
+            device's axis's current value is. The direction vector is rotated
+            based on the orientation of the sensor.
 
-        @param hid_type: An integer whose value defines whether the device
-            in question is a TSS_JOYSTICK or TSS_MOUSE.
+            @param hid_type: An integer whose value defines whether the device
+                in question is a TSS_JOYSTICK or TSS_MOUSE.
 
-        @param config_axis: A string whose value may be either 'X' or 'Y'
-            for a mouse or 'X', 'Y', or 'Z' for a joystick. This string
-            defines what axis of the device is to be configured.
+            @param config_axis: A string whose value may be either 'X' or 'Y'
+                for a mouse or 'X', 'Y', or 'Z' for a joystick. This string
+                defines what axis of the device is to be configured.
 
-        @param dist_from_screen: A float whose value is the real world
-            distance the sensor is from the user's screen. Must be the same
-            units as dist_on_axis.
+            @param dist_from_screen: A float whose value is the real world
+                distance the sensor is from the user's screen. Must be the same
+                units as dist_on_axis.
 
-        @param dist_on_axis: A float whose value is the real world length of
-            the axis along the user's screen (width of screen for x-axis,
-            height of screen for y-axis). Must be the same units as
-            dist_from_screen.
+            @param dist_on_axis: A float whose value is the real world length of
+                the axis along the user's screen (width of screen for x-axis,
+                height of screen for y-axis). Must be the same units as
+                dist_from_screen.
 
-        @param collision_component: A string whose value may be 'X', 'Y', or
-            'Z'. This string defines what component of the look vector's
-            collision point on the virtual plane to use for manipulating the
-            device's axis.
+            @param collision_component: A string whose value may be 'X', 'Y', or
+                'Z'. This string defines what component of the look vector's
+                collision point on the virtual plane to use for manipulating the
+                device's axis.
 
-        @param sensor_dir: A string whose value may be 'X', 'Y', or 'Z'.
-            This string defines which of the sensor's local axis to use for
-            creating the vector to collide with the virtual plane.
+            @param sensor_dir: A string whose value may be 'X', 'Y', or 'Z'.
+                This string defines which of the sensor's local axis to use for
+                creating the vector to collide with the virtual plane.
 
-        @param button_halt: A float whose value is a pause time in
-            milliseconds. When a button is pressed on the emulated device,
-            transmission of changes to the axis is paused for the inputted
-            amount of time to prevent undesired motion detection when
-            pressing buttons.
+            @param button_halt: A float whose value is a pause time in
+                milliseconds. When a button is pressed on the emulated device,
+                transmission of changes to the axis is paused for the inputted
+                amount of time to prevent undesired motion detection when
+                pressing buttons.
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         # Set class
         if hid_type != TSS_JOYSTICK and hid_type != TSS_MOUSE:
@@ -1361,7 +1235,8 @@ class _TSSensor(_TSBase):
         try:
             cntl_idx = axis_idx.index(config_axis)
         except:
-            _print("Invalid command for config_axis: {0:s}".format(config_axis))
+            _print(
+                "Invalid command for config_axis: {0:s}".format(config_axis))
             return False
 
         # Set mode
@@ -1377,11 +1252,8 @@ class _TSSensor(_TSBase):
         try:
             data_array.append(axis_idx.index(collision_component))
         except:
-            _print(
-                "Invalid command for collision_component: {0:s}".format(
-                    collision_component
-                )
-            )
+            _print("Invalid command for collision_component: {0:s}".format(
+                collision_component))
             return False
         sensor_dir = sensor_dir.upper()
         try:
@@ -1403,17 +1275,17 @@ class _TSSensor(_TSBase):
         return True
 
     def disableAxis(self, hid_type, config_axis):
-        """Disables an axis on the passed in device.
+        """ Disables an axis on the passed in device.
 
-        @param hid_type: An integer whose value defines whether the device
-            in question is a TSS_JOYSTICK or TSS_MOUSE.
+            @param hid_type: An integer whose value defines whether the device
+                in question is a TSS_JOYSTICK or TSS_MOUSE.
 
-        @param config_axis: A string whose value may be either 'X' or 'Y'
-            for a mouse or 'X', 'Y', or 'Z' for a joystick. This string
-            defines what axis of the device is to be configured.
+            @param config_axis: A string whose value may be either 'X' or 'Y'
+                for a mouse or 'X', 'Y', or 'Z' for a joystick. This string
+                defines what axis of the device is to be configured.
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         # Set class
         if hid_type != TSS_JOYSTICK and hid_type != TSS_MOUSE:
@@ -1430,27 +1302,28 @@ class _TSSensor(_TSBase):
         try:
             cntl_idx = axis_idx.index(config_axis)
         except:
-            _print("Invalid command for config_axis: {0:s}".format(config_axis))
+            _print(
+                "Invalid command for config_axis: {0:s}".format(config_axis))
             return False
 
         # Set mode
         return self.setControlMode(cntl_class, cntl_idx, 255)
 
     def setPhysicalButton(self, hid_type, button_idx, button_bind):
-        """Binds a sensor's physical button to an emulated device's button.
+        """ Binds a sensor's physical button to an emulated device's button.
 
-        @param hid_type: An integer whose value defines whether the device
-            in question is a TSS_JOYSTICK or TSS_MOUSE.
+            @param hid_type: An integer whose value defines whether the device
+                in question is a TSS_JOYSTICK or TSS_MOUSE.
 
-        @param button_idx: An integer whose value defines which button on
-            the emulated device to configure. Default range is 0 through 7.
+            @param button_idx: An integer whose value defines which button on
+                the emulated device to configure. Default range is 0 through 7.
 
-        @param button_bind: An integer whose value defines which physical
-            button to bind to the emulated device's button to as defined by
-            button_idx, either TSS_BUTTON_LEFT or TSS_BUTTON_RIGHT.
+            @param button_bind: An integer whose value defines which physical
+                button to bind to the emulated device's button to as defined by
+                button_idx, either TSS_BUTTON_LEFT or TSS_BUTTON_RIGHT.
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         # Set class
         if hid_type != TSS_JOYSTICK and hid_type != TSS_MOUSE:
@@ -1464,40 +1337,39 @@ class _TSSensor(_TSBase):
 
         # Create data
         if button_bind != TSS_BUTTON_LEFT and button_bind != TSS_BUTTON_RIGHT:
-            _print("Invalid command for button_bind: {0:d}".format(button_bind))
+            _print(
+                "Invalid command for button_bind: {0:d}".format(button_bind))
             return False
         data = button_bind
 
         # Set data
         return self.setControlData(cntl_class, button_idx, 0, data)
 
-    def setOrientationButton(
-        self, hid_type, button_idx, local_axis, global_axis, max_dist
-    ):
-        """Sets up a device's button such that it is 'pressed' when a reference
-        vector aligns itself with a local vector.
+    def setOrientationButton(self, hid_type, button_idx, local_axis, global_axis, max_dist):
+        """ Sets up a device's button such that it is 'pressed' when a reference
+            vector aligns itself with a local vector.
 
-        @param hid_type: An integer whose value defines whether the device
-            in question is a TSS_JOYSTICK or TSS_MOUSE.
+            @param hid_type: An integer whose value defines whether the device
+                in question is a TSS_JOYSTICK or TSS_MOUSE.
 
-        @param button_idx: An integer whose value defines which button on
-            the emulated device to configure. Default range is 0 through 7.
+            @param button_idx: An integer whose value defines which button on
+                the emulated device to configure. Default range is 0 through 7.
 
-        @param local_axis: A list of 3 floats whose value represents a
-            normalized Vector3. This vector represents the sensor's local
-            vector to track.
+            @param local_axis: A list of 3 floats whose value represents a
+                normalized Vector3. This vector represents the sensor's local
+                vector to track.
 
-        @param global_axis: A list of 3 floats whose value is a normalized
-            Vector3. This vector represents the global vector to move the
-            local vector towards for "pressing" (should not be colinear to
-            the local vector).
+            @param global_axis: A list of 3 floats whose value is a normalized
+                Vector3. This vector represents the global vector to move the
+                local vector towards for "pressing" (should not be colinear to
+                the local vector).
 
-        @param max_dist: A float whose value defines how close the local
-            vector's orientation must be to the global vector for the button
-            to be 'pressed'.
+            @param max_dist: A float whose value defines how close the local
+                vector's orientation must be to the global vector for the button
+                to be 'pressed'.
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         # Set class
         if hid_type != TSS_JOYSTICK and hid_type != TSS_MOUSE:
@@ -1519,21 +1391,21 @@ class _TSSensor(_TSBase):
         return True
 
     def setShakeButton(self, hid_type, button_idx, threshold):
-        """Sets up an emulated device's button such that it is 'pressed' when
-        the sensor is shaken.
+        """ Sets up an emulated device's button such that it is 'pressed' when
+            the sensor is shaken.
 
-        @param hid_type: An integer whose value defines whether the device
-            in question is a TSS_JOYSTICK or TSS_MOUSE.
+            @param hid_type: An integer whose value defines whether the device
+                in question is a TSS_JOYSTICK or TSS_MOUSE.
 
-        @param button_idx: An integer whose value defines which button on
-            the emulated device to configure. Default range is 0 through 7.
+            @param button_idx: An integer whose value defines which button on
+                the emulated device to configure. Default range is 0 through 7.
 
-        @param threshold: A float whose value defines how many Gs of force
-            must be experienced by the sensor before the button is
-            'pressed'.
+            @param threshold: A float whose value defines how many Gs of force
+                must be experienced by the sensor before the button is
+                'pressed'.
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         # Set class
         if hid_type != TSS_JOYSTICK and hid_type != TSS_MOUSE:
@@ -1555,16 +1427,16 @@ class _TSSensor(_TSBase):
         return True
 
     def disableButton(self, hid_type, button_idx):
-        """Disables a button on the passed in emulated device.
+        """ Disables a button on the passed in emulated device.
 
-        @param hid_type: An integer whose value defines whether the device
-            in question is a TSS_JOYSTICK or TSS_MOUSE.
+            @param hid_type: An integer whose value defines whether the device
+                in question is a TSS_JOYSTICK or TSS_MOUSE.
 
-        @param button_idx: An integer whose value defines which button on
-            the emulated device to configure. Default range is 0 through 7.
+            @param button_idx: An integer whose value defines which button on
+                the emulated device to configure. Default range is 0 through 7.
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         # Set class
         if hid_type != TSS_JOYSTICK and hid_type != TSS_MOUSE:
@@ -1576,36 +1448,34 @@ class _TSSensor(_TSBase):
         return self.setControlMode(cntl_class, button_idx, 255)
 
     # Convenience functions for setting up simple mouse/joystick implimentations
-    def setupSimpleMouse(
-        self, diagonal_size, dist_from_screen, aspect_ratio, is_relative=True
-    ):
-        """Creates a simple emulated mouse device using the features of the
-        sensor. Left button and right button emulate the mouse's left and
-        right buttons respectivly and using the sensor as a pointing device
-        with the front of the device facing towards the screen will move the
-        mouse cursor.
+    def setupSimpleMouse(self, diagonal_size, dist_from_screen, aspect_ratio, is_relative=True):
+        """ Creates a simple emulated mouse device using the features of the
+            sensor. Left button and right button emulate the mouse's left and
+            right buttons respectivly and using the sensor as a pointing device
+            with the front of the device facing towards the screen will move the
+            mouse cursor.
 
-        @param diagonal_size: A float whose value is the real world diagonal
-            size of the user's screen.
+            @param diagonal_size: A float whose value is the real world diagonal
+                size of the user's screen.
 
-        @param dist_from_screen: A float whose value is the real world
-            distance the sensor is from the user's screen. Must be the same
-            units as diagonal_size.
+            @param dist_from_screen: A float whose value is the real world
+                distance the sensor is from the user's screen. Must be the same
+                units as diagonal_size.
 
-        @param aspect_ratio: A float whose value is the real world aspect
-            ratio of the user's screen.
+            @param aspect_ratio: A float whose value is the real world aspect
+                ratio of the user's screen.
 
-        @param is_relative: A boolean whose value expresses whether the
-            mouse is to operate in relative mode (True) or absolute mode
-            (False).
+            @param is_relative: A boolean whose value expresses whether the
+                mouse is to operate in relative mode (True) or absolute mode
+                (False).
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         cur_mouse_rel = self.getMouseAbsoluteRelativeMode()
         if cur_mouse_rel != is_relative:
             if self.setMouseAbsoluteRelativeMode(is_relative):
-                fail_byte, t_stamp, data = self.writeRead("softwareReset")
+                fail_byte, t_stamp, data = self.writeRead('softwareReset')
                 if not fail_byte:
                     while self.getSerialNumber():
                         pass
@@ -1621,11 +1491,9 @@ class _TSSensor(_TSBase):
         _print("Width: {0:2f}".format(screen_width))
 
         self.setScreenPointAxis(
-            TSS_MOUSE, "X", dist_from_screen, screen_width, "X", "Z", 50
-        )
+            TSS_MOUSE, "X", dist_from_screen, screen_width, "X", "Z", 50)
         self.setScreenPointAxis(
-            TSS_MOUSE, "Y", dist_from_screen, screen_height, "Y", "Z", 50
-        )
+            TSS_MOUSE, "Y", dist_from_screen, screen_height, "Y", "Z", 50)
 
         self.setPhysicalButton(TSS_MOUSE, 0, TSS_BUTTON_LEFT)
         self.setPhysicalButton(TSS_MOUSE, 1, TSS_BUTTON_RIGHT)
@@ -1637,80 +1505,78 @@ class _TSSensor(_TSBase):
         self.disableButton(TSS_MOUSE, 7)
 
     def setupSimpleJoystick(self, deadzone, scale, power, shake_threshold, max_dist):
-        """Creates a simple emulated joystick device using the features of the
-        sensor. The left and right physical buttons on the sensor act as
-        buttons 0 and 1 for the joystick. Button 2 is a shake button.
-        Buttons 3 and 4 are pressed when the sensor is rotated +-90 degrees
-        on the Z-axis. Rotations on the sensor's Y and X axis correspond to
-        movements on the joystick's X and Y axis.
+        """ Creates a simple emulated joystick device using the features of the
+            sensor. The left and right physical buttons on the sensor act as
+            buttons 0 and 1 for the joystick. Button 2 is a shake button.
+            Buttons 3 and 4 are pressed when the sensor is rotated +-90 degrees
+            on the Z-axis. Rotations on the sensor's Y and X axis correspond to
+            movements on the joystick's X and Y axis.
 
-        @param deadzone: A float that defines the minimum distance necessary
-            for the device's axis to read a non-zero value.
+            @param deadzone: A float that defines the minimum distance necessary
+                for the device's axis to read a non-zero value.
 
-        @param scale: A float that defines the linear scale for the values
-            being returned for the axis.
+            @param scale: A float that defines the linear scale for the values
+                being returned for the axis.
 
-        @param power:A float whose value is an exponental power used to
-            further modify data being returned from the sensor.
+            @param power:A float whose value is an exponental power used to
+                further modify data being returned from the sensor.
 
-        @param shake_threshold: A float whose value defines how many Gs of
-            force must be experienced by the sensor before the button 2 is
-            'pressed'.
+            @param shake_threshold: A float whose value defines how many Gs of
+                force must be experienced by the sensor before the button 2 is
+                'pressed'.
 
-        @param max_dist: A float whose value defines how close the local
-            vector's orientation must  be to the global vector for buttons 3
-            and 4 are "pressed".
+            @param max_dist: A float whose value defines how close the local
+                vector's orientation must  be to the global vector for buttons 3
+                and 4 are "pressed".
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
-        self.setGlobalAxis(
-            TSS_JOYSTICK, "X", [1, 0, 0], [0, 0, -1], deadzone, scale, power
-        )
-        self.setGlobalAxis(
-            TSS_JOYSTICK, "Y", [0, 1, 0], [0, 0, -1], deadzone, scale, power
-        )
+        self.setGlobalAxis(TSS_JOYSTICK, "X", [1, 0, 0], [
+                           0, 0, -1], deadzone, scale, power)
+        self.setGlobalAxis(TSS_JOYSTICK, "Y", [0, 1, 0], [
+                           0, 0, -1], deadzone, scale, power)
         self.setPhysicalButton(TSS_JOYSTICK, 0, TSS_BUTTON_LEFT)
         self.setPhysicalButton(TSS_JOYSTICK, 1, TSS_BUTTON_RIGHT)
         self.setShakeButton(TSS_JOYSTICK, 2, shake_threshold)
-        self.setOrientationButton(TSS_JOYSTICK, 3, [0, 1, 0], [-1, 0, 0], max_dist)
-        self.setOrientationButton(TSS_JOYSTICK, 4, [0, 1, 0], [1, 0, 0], max_dist)
+        self.setOrientationButton(
+            TSS_JOYSTICK, 3, [0, 1, 0], [-1, 0, 0], max_dist)
+        self.setOrientationButton(
+            TSS_JOYSTICK, 4, [0, 1, 0], [1, 0, 0], max_dist)
         self.disableButton(TSS_JOYSTICK, 5)
         self.disableButton(TSS_JOYSTICK, 6)
         self.disableButton(TSS_JOYSTICK, 7)
 
     # LightGun Functions
-    def setupSimpleLightgun(
-        self, diagonal_size, dist_from_screen, aspect_ratio, is_relative=True
-    ):
-        """Creates a simple emulated mouse based lightgun device using the
-        features of the sensor. Left button of the sensor emulates the
-        mouse's left button. Shaking the sensor emulates the mouse's right
-        button. This configuration uses the sensor as a pointing device with
-        the front of the device facing forward the screen will move the
-        mouse cursor.
+    def setupSimpleLightgun(self, diagonal_size, dist_from_screen, aspect_ratio, is_relative=True):
+        """ Creates a simple emulated mouse based lightgun device using the
+            features of the sensor. Left button of the sensor emulates the
+            mouse's left button. Shaking the sensor emulates the mouse's right
+            button. This configuration uses the sensor as a pointing device with
+            the front of the device facing forward the screen will move the
+            mouse cursor.
 
-        @param diagonal_size: A float whose value is the real world diagonal
-            size of the user's screen.
+            @param diagonal_size: A float whose value is the real world diagonal
+                size of the user's screen.
 
-        @param dist_from_screen: A float whose value is the real world
-            distance the sensor is from the user's screen. Must be the same
-            units as diagonal_size.
+            @param dist_from_screen: A float whose value is the real world
+                distance the sensor is from the user's screen. Must be the same
+                units as diagonal_size.
 
-        @param aspect_ratio: A float whose value is the real world aspect
-            ratio of the user's screen.
+            @param aspect_ratio: A float whose value is the real world aspect
+                ratio of the user's screen.
 
-        @param is_relative: A boolean whose value expresses whether the
-            mouse is to operate in relative mode (True) or absolute mode
-            (False).
+            @param is_relative: A boolean whose value expresses whether the
+                mouse is to operate in relative mode (True) or absolute mode
+                (False).
 
-        @return: True if the command was successfuly written to the device.
-            False if the command was not written.
+            @return: True if the command was successfuly written to the device.
+                False if the command was not written.
         """
         cur_mouse_rel = self.getMouseAbsoluteRelativeMode()
         if cur_mouse_rel != is_relative:
             if self.setMouseAbsoluteRelativeMode(is_relative):
-                fail_byte, t_stamp, data = self.writeRead("softwareReset")
+                fail_byte, t_stamp, data = self.writeRead('softwareReset')
                 if not fail_byte:
                     while self.getSerialNumber():
                         pass
@@ -1726,11 +1592,9 @@ class _TSSensor(_TSBase):
         _print("Width: {0:2f}".format(screen_width))
 
         self.setScreenPointAxis(
-            TSS_MOUSE, "X", dist_from_screen, screen_width, "X", "Z", 50
-        )
+            TSS_MOUSE, "X", dist_from_screen, screen_width, "X", "Z", 50)
         self.setScreenPointAxis(
-            TSS_MOUSE, "Y", dist_from_screen, screen_height, "Y", "Z", 50
-        )
+            TSS_MOUSE, "Y", dist_from_screen, screen_height, "Y", "Z", 50)
 
         self.setPhysicalButton(TSS_MOUSE, 0, TSS_BUTTON_LEFT)
         self.setShakeButton(TSS_MOUSE, 1, 1.0)
@@ -1741,33 +1605,31 @@ class _TSSensor(_TSBase):
         self.disableButton(TSS_MOUSE, 6)
         self.disableButton(TSS_MOUSE, 7)
 
-    ##  80(0x50)
-    def setStreamingSlots(
-        self,
-        slot0="null",
-        slot1="null",
-        slot2="null",
-        slot3="null",
-        slot4="null",
-        slot5="null",
-        slot6="null",
-        slot7="null",
-    ):
+    # 80(0x50)
+    def setStreamingSlots(self, slot0='null',
+                          slot1='null',
+                          slot2='null',
+                          slot3='null',
+                          slot4='null',
+                          slot5='null',
+                          slot6='null',
+                          slot7='null'):
         slots = [slot0, slot1, slot2, slot3, slot4, slot5, slot6, slot7]
         slot_bytes = []
         for slot in slots:
             cmd_byte = self.command_dict[slot][0]
             slot_bytes.append(cmd_byte)
-        fail_byte, timestamp, filler = self.writeRead("_setStreamingSlots", slot_bytes)
+        fail_byte, timestamp, filler = self.writeRead(
+            '_setStreamingSlots', slot_bytes)
         self.stream_slot_cmds = slots
         self._generateStreamParse()
         return not fail_byte
 
-    ##  81(0x51)
+    # 81(0x51)
     def getStreamingSlots(self):
         if self.stream_slot_cmds is None:
-            self.stream_slot_cmds = ["null"] * 8
-        fail_byte, timestamp, slot_bytes = self.writeRead("_getStreamingSlots")
+            self.stream_slot_cmds = ['null'] * 8
+        fail_byte, timestamp, slot_bytes = self.writeRead('_getStreamingSlots')
         need_update = False
         if slot_bytes:
             for slot_idx in range(len(self.stream_slot_cmds)):
@@ -1780,926 +1642,907 @@ class _TSSensor(_TSBase):
                 self._generateStreamParse()
             return self.stream_slot_cmds
 
-    ##  82(0x52)
+    # 82(0x52)
     def setStreamingTiming(self, interval, duration, delay, timestamp=False):
         arg_list = (interval, duration, delay)
-        fail_byte, t_stamp, data = self.writeRead("_setStreamingTiming", arg_list)
+        fail_byte, t_stamp, data = self.writeRead(
+            '_setStreamingTiming', arg_list)
         if not fail_byte:
             self.stream_timing = arg_list
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  83(0x53)
+    # 83(0x53)
     def getStreamingTiming(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("_getStreamingTiming")
+        fail_byte, t_stamp, data = self.writeRead('_getStreamingTiming')
         if data:
             self.stream_timing = data
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  84(0x54)
+    # 84(0x54)
     def getStreamingBatch(self, timestamp=False):
         if self.stream_parse is None:
             self._generateStreamParse()
-        fail_byte, t_stamp, data = self.writeRead("_getStreamingBatch")
+        fail_byte, t_stamp, data = self.writeRead('_getStreamingBatch')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  85(0x55)
+    # 85(0x55)
     def stopStreaming(self):
         self.record_data = False
-        fail_byte, timestamp, slot_bytes = self.writeRead("stopStreaming")
+        fail_byte, timestamp, slot_bytes = self.writeRead('stopStreaming')
         return not fail_byte
 
-    ##  86(0x56)
+    # 86(0x56)
     def startStreaming(self, start_record=False):
         self.record_data = start_record
         if self.stream_parse is None:
             self._generateStreamParse()
-        fail_byte, timestamp, slot_bytes = self.writeRead("startStreaming")
+        fail_byte, timestamp, slot_bytes = self.writeRead('startStreaming')
         return not fail_byte
 
-    ## generated functions USB and WL_ and EM_ and DL_ and BT_
-    ##   0(0x00)
+    # generated functions USB and WL_ and EM_ and DL_ and BT_
+    # 0(0x00)
     def getTaredOrientationAsQuaternion(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTaredOrientationAsQuaternion")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getTaredOrientationAsQuaternion')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   1(0x01)
+    # 1(0x01)
     def getTaredOrientationAsEulerAngles(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTaredOrientationAsEulerAngles")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getTaredOrientationAsEulerAngles')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   2(0x02)
+    # 2(0x02)
     def getTaredOrientationAsRotationMatrix(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTaredOrientationAsRotationMatrix")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getTaredOrientationAsRotationMatrix')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   3(0x03)
+    # 3(0x03)
     def getTaredOrientationAsAxisAngle(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTaredOrientationAsAxisAngle")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getTaredOrientationAsAxisAngle')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   4(0x04)
+    # 4(0x04)
     def getTaredOrientationAsTwoVector(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTaredOrientationAsTwoVector")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getTaredOrientationAsTwoVector')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   5(0x05)
+    # 5(0x05)
     def getDifferenceQuaternion(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getDifferenceQuaternion")
+        fail_byte, t_stamp, data = self.writeRead('getDifferenceQuaternion')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   6(0x06)
+    # 6(0x06)
     def getUntaredOrientationAsQuaternion(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUntaredOrientationAsQuaternion")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getUntaredOrientationAsQuaternion')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   7(0x07)
+    # 7(0x07)
     def getUntaredOrientationAsEulerAngles(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUntaredOrientationAsEulerAngles")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getUntaredOrientationAsEulerAngles')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   8(0x08)
+    # 8(0x08)
     def getUntaredOrientationAsRotationMatrix(self, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "getUntaredOrientationAsRotationMatrix"
-        )
+            'getUntaredOrientationAsRotationMatrix')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##   9(0x09)
+    # 9(0x09)
     def getUntaredOrientationAsAxisAngle(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUntaredOrientationAsAxisAngle")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getUntaredOrientationAsAxisAngle')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  10(0x0a)
+    # 10(0x0a)
     def getUntaredOrientationAsTwoVector(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUntaredOrientationAsTwoVector")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getUntaredOrientationAsTwoVector')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  11(0x0b)
+    # 11(0x0b)
     def getTaredTwoVectorInSensorFrame(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTaredTwoVectorInSensorFrame")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getTaredTwoVectorInSensorFrame')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  12(0x0c)
+    # 12(0x0c)
     def getUntaredTwoVectorInSensorFrame(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUntaredTwoVectorInSensorFrame")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getUntaredTwoVectorInSensorFrame')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  16(0x10)
+    # 16(0x10)
     def setEulerAngleDecompositionOrder(self, angle_order, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setEulerAngleDecompositionOrder", angle_order
-        )
+            'setEulerAngleDecompositionOrder', angle_order)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  17(0x11)
-    def setMagnetoresistiveThreshold(
-        self,
-        threshold,
-        trust_frames,
-        lockout_decay,
-        perturbation_detection_value,
-        timestamp=False,
-    ):
-        arg_list = (
-            threshold,
-            trust_frames,
-            lockout_decay,
-            perturbation_detection_value,
-        )
+    # 17(0x11)
+    def setMagnetoresistiveThreshold(self, threshold, trust_frames, lockout_decay, perturbation_detection_value, timestamp=False):
+        arg_list = (threshold, trust_frames, lockout_decay,
+                    perturbation_detection_value)
         fail_byte, t_stamp, data = self.writeRead(
-            "setMagnetoresistiveThreshold", arg_list
-        )
+            'setMagnetoresistiveThreshold', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  18(0x12)
-    def setAccelerometerResistanceThreshold(
-        self, threshold, lockout_decay, timestamp=False
-    ):
+    # 18(0x12)
+    def setAccelerometerResistanceThreshold(self, threshold, lockout_decay, timestamp=False):
         arg_list = (threshold, lockout_decay)
         fail_byte, t_stamp, data = self.writeRead(
-            "setAccelerometerResistanceThreshold", arg_list
-        )
+            'setAccelerometerResistanceThreshold', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  19(0x13)
+    # 19(0x13)
     def offsetWithCurrentOrientation(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("offsetWithCurrentOrientation")
+        fail_byte, t_stamp, data = self.writeRead(
+            'offsetWithCurrentOrientation')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  20(0x14)
+    # 20(0x14)
     def resetBaseOffset(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("resetBaseOffset")
+        fail_byte, t_stamp, data = self.writeRead('resetBaseOffset')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  21(0x15)
+    # 21(0x15)
     def offsetWithQuaternion(self, quaternion, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("offsetWithQuaternion", quaternion)
+        fail_byte, t_stamp, data = self.writeRead(
+            'offsetWithQuaternion', quaternion)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  22(0x16)
+    # 22(0x16)
     def setBaseOffsetWithCurrentOrientation(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setBaseOffsetWithCurrentOrientation")
+        fail_byte, t_stamp, data = self.writeRead(
+            'setBaseOffsetWithCurrentOrientation')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  32(0x20)
+    # 32(0x20)
     def getAllNormalizedComponentSensorData(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAllNormalizedComponentSensorData")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getAllNormalizedComponentSensorData')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  33(0x21)
+    # 33(0x21)
     def getNormalizedGyroRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getNormalizedGyroRate")
+        fail_byte, t_stamp, data = self.writeRead('getNormalizedGyroRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  34(0x22)
+    # 34(0x22)
     def getNormalizedAccelerometerVector(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getNormalizedAccelerometerVector")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getNormalizedAccelerometerVector')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  35(0x23)
+    # 35(0x23)
     def getNormalizedCompassVector(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getNormalizedCompassVector")
+        fail_byte, t_stamp, data = self.writeRead('getNormalizedCompassVector')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  37(0x25)
+    # 37(0x25)
     def getAllCorrectedComponentSensorData(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAllCorrectedComponentSensorData")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getAllCorrectedComponentSensorData')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  38(0x26)
+    # 38(0x26)
     def getCorrectedGyroRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCorrectedGyroRate")
+        fail_byte, t_stamp, data = self.writeRead('getCorrectedGyroRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  39(0x27)
+    # 39(0x27)
     def getCorrectedAccelerometerVector(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCorrectedAccelerometerVector")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getCorrectedAccelerometerVector')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  40(0x28)
+    # 40(0x28)
     def getCorrectedCompassVector(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCorrectedCompassVector")
+        fail_byte, t_stamp, data = self.writeRead('getCorrectedCompassVector')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  41(0x29)
+    # 41(0x29)
     def getCorrectedLinearAccelerationInGlobalSpace(self, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "getCorrectedLinearAccelerationInGlobalSpace"
-        )
+            'getCorrectedLinearAccelerationInGlobalSpace')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  43(0x2b)
+    # 43(0x2b)
     def getTemperatureC(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTemperatureC")
+        fail_byte, t_stamp, data = self.writeRead('getTemperatureC')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  44(0x2c)
+    # 44(0x2c)
     def getTemperatureF(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTemperatureF")
+        fail_byte, t_stamp, data = self.writeRead('getTemperatureF')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  45(0x2d)
+    # 45(0x2d)
     def getConfidenceFactor(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getConfidenceFactor")
+        fail_byte, t_stamp, data = self.writeRead('getConfidenceFactor')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  64(0x40)
+    # 64(0x40)
     def getAllRawComponentSensorData(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAllRawComponentSensorData")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getAllRawComponentSensorData')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  65(0x41)
+    # 65(0x41)
     def getRawGyroscopeRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getRawGyroscopeRate")
+        fail_byte, t_stamp, data = self.writeRead('getRawGyroscopeRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  66(0x42)
+    # 66(0x42)
     def getRawAccelerometerData(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getRawAccelerometerData")
+        fail_byte, t_stamp, data = self.writeRead('getRawAccelerometerData')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  67(0x43)
+    # 67(0x43)
     def getRawCompassData(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getRawCompassData")
+        fail_byte, t_stamp, data = self.writeRead('getRawCompassData')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  96(0x60)
+    # 96(0x60)
     def tareWithCurrentOrientation(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("tareWithCurrentOrientation")
+        fail_byte, t_stamp, data = self.writeRead('tareWithCurrentOrientation')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  97(0x61)
+    # 97(0x61)
     def tareWithQuaternion(self, quaternion, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("tareWithQuaternion", quaternion)
+        fail_byte, t_stamp, data = self.writeRead(
+            'tareWithQuaternion', quaternion)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  98(0x62)
+    # 98(0x62)
     def tareWithRotationMatrix(self, rotation_matrix, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "tareWithRotationMatrix", rotation_matrix
-        )
+            'tareWithRotationMatrix', rotation_matrix)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  99(0x63)
+    # 99(0x63)
     def setStaticAccelerometerTrustValue(self, trust_value, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setStaticAccelerometerTrustValue", trust_value
-        )
+            'setStaticAccelerometerTrustValue', trust_value)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 100(0x64)
-    def setConfidenceAccelerometerTrustValues(
-        self, min_trust_value, max_trust_value, timestamp=False
-    ):
+    # 100(0x64)
+    def setConfidenceAccelerometerTrustValues(self, min_trust_value, max_trust_value, timestamp=False):
         arg_list = (min_trust_value, max_trust_value)
         fail_byte, t_stamp, data = self.writeRead(
-            "setConfidenceAccelerometerTrustValues", arg_list
-        )
+            'setConfidenceAccelerometerTrustValues', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 101(0x65)
+    # 101(0x65)
     def setStaticCompassTrustValue(self, trust_value, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setStaticCompassTrustValue", trust_value
-        )
+            'setStaticCompassTrustValue', trust_value)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 102(0x66)
-    def setConfidenceCompassTrustValues(
-        self, min_trust_value, max_trust_value, timestamp=False
-    ):
+    # 102(0x66)
+    def setConfidenceCompassTrustValues(self, min_trust_value, max_trust_value, timestamp=False):
         arg_list = (min_trust_value, max_trust_value)
         fail_byte, t_stamp, data = self.writeRead(
-            "setConfidenceCompassTrustValues", arg_list
-        )
+            'setConfidenceCompassTrustValues', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 103(0x67)
+    # 103(0x67)
     def setDesiredUpdateRate(self, update_rate, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setDesiredUpdateRate", update_rate)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setDesiredUpdateRate', update_rate)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 105(0x69)
+    # 105(0x69)
     def setReferenceVectorMode(self, mode, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setReferenceVectorMode", mode)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setReferenceVectorMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 106(0x6a)
+    # 106(0x6a)
     def setOversampleRate(self, samples_per_iteration, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setOversampleRate", samples_per_iteration
-        )
+            'setOversampleRate', samples_per_iteration)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 107(0x6b)
+    # 107(0x6b)
     def setGyroscopeEnabled(self, enabled, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setGyroscopeEnabled", enabled)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setGyroscopeEnabled', enabled)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 108(0x6c)
+    # 108(0x6c)
     def setAccelerometerEnabled(self, enabled, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setAccelerometerEnabled", enabled)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setAccelerometerEnabled', enabled)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 109(0x6d)
+    # 109(0x6d)
     def setCompassEnabled(self, enabled, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setCompassEnabled", enabled)
+        fail_byte, t_stamp, data = self.writeRead('setCompassEnabled', enabled)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 116(0x74)
+    # 116(0x74)
     def setAxisDirections(self, axis_direction_byte, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setAxisDirections", axis_direction_byte
-        )
+            'setAxisDirections', axis_direction_byte)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 117(0x75)
+    # 117(0x75)
     def setRunningAveragePercent(self, running_average_percent, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setRunningAveragePercent", running_average_percent
-        )
+            'setRunningAveragePercent', running_average_percent)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 118(0x76)
+    # 118(0x76)
     def setCompassReferenceVector(self, reference_vector, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setCompassReferenceVector", reference_vector
-        )
+            'setCompassReferenceVector', reference_vector)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 119(0x77)
+    # 119(0x77)
     def setAccelerometerReferenceVector(self, reference_vector, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setAccelerometerReferenceVector", reference_vector
-        )
+            'setAccelerometerReferenceVector', reference_vector)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 120(0x78)
+    # 120(0x78)
     def resetKalmanFilter(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("resetKalmanFilter")
+        fail_byte, t_stamp, data = self.writeRead('resetKalmanFilter')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 121(0x79)
+    # 121(0x79)
     def setAccelerometerRange(self, accelerometer_range_setting, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setAccelerometerRange", accelerometer_range_setting
-        )
+            'setAccelerometerRange', accelerometer_range_setting)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 123(0x7b)
+    # 123(0x7b)
     def setFilterMode(self, mode, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setFilterMode", mode)
+        fail_byte, t_stamp, data = self.writeRead('setFilterMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 124(0x7c)
+    # 124(0x7c)
     def setRunningAverageMode(self, mode, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setRunningAverageMode", mode)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setRunningAverageMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 125(0x7d)
+    # 125(0x7d)
     def setGyroscopeRange(self, gyroscope_range_setting, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setGyroscopeRange", gyroscope_range_setting
-        )
+            'setGyroscopeRange', gyroscope_range_setting)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 126(0x7e)
+    # 126(0x7e)
     def setCompassRange(self, compass_range_setting, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setCompassRange", compass_range_setting
-        )
+            'setCompassRange', compass_range_setting)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 128(0x80)
+    # 128(0x80)
     def getTareAsQuaternion(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTareAsQuaternion")
+        fail_byte, t_stamp, data = self.writeRead('getTareAsQuaternion')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 129(0x81)
+    # 129(0x81)
     def getTareAsRotationMatrix(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getTareAsRotationMatrix")
+        fail_byte, t_stamp, data = self.writeRead('getTareAsRotationMatrix')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 130(0x82)
+    # 130(0x82)
     def getAccelerometerTrustValues(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAccelerometerTrustValues")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getAccelerometerTrustValues')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 131(0x83)
+    # 131(0x83)
     def getCompassTrustValues(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCompassTrustValues")
+        fail_byte, t_stamp, data = self.writeRead('getCompassTrustValues')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 132(0x84)
+    # 132(0x84)
     def getCurrentUpdateRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCurrentUpdateRate")
+        fail_byte, t_stamp, data = self.writeRead('getCurrentUpdateRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 133(0x85)
+    # 133(0x85)
     def getCompassReferenceVector(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCompassReferenceVector")
+        fail_byte, t_stamp, data = self.writeRead('getCompassReferenceVector')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 134(0x86)
+    # 134(0x86)
     def getAccelerometerReferenceVector(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAccelerometerReferenceVector")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getAccelerometerReferenceVector')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 140(0x8c)
+    # 140(0x8c)
     def getGyroscopeEnabledState(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getGyroscopeEnabledState")
+        fail_byte, t_stamp, data = self.writeRead('getGyroscopeEnabledState')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 141(0x8d)
+    # 141(0x8d)
     def getAccelerometerEnabledState(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAccelerometerEnabledState")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getAccelerometerEnabledState')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 142(0x8e)
+    # 142(0x8e)
     def getCompassEnabledState(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCompassEnabledState")
+        fail_byte, t_stamp, data = self.writeRead('getCompassEnabledState')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 143(0x8f)
+    # 143(0x8f)
     def getAxisDirections(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAxisDirections")
+        fail_byte, t_stamp, data = self.writeRead('getAxisDirections')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 144(0x90)
+    # 144(0x90)
     def getOversampleRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getOversampleRate")
+        fail_byte, t_stamp, data = self.writeRead('getOversampleRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 145(0x91)
+    # 145(0x91)
     def getRunningAveragePercent(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getRunningAveragePercent")
+        fail_byte, t_stamp, data = self.writeRead('getRunningAveragePercent')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 146(0x92)
+    # 146(0x92)
     def getDesiredUpdateRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getDesiredUpdateRate")
+        fail_byte, t_stamp, data = self.writeRead('getDesiredUpdateRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 148(0x94)
+    # 148(0x94)
     def getAccelerometerRange(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAccelerometerRange")
+        fail_byte, t_stamp, data = self.writeRead('getAccelerometerRange')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 152(0x98)
+    # 152(0x98)
     def getFilterMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getFilterMode")
+        fail_byte, t_stamp, data = self.writeRead('getFilterMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 153(0x99)
+    # 153(0x99)
     def getRunningAverageMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getRunningAverageMode")
+        fail_byte, t_stamp, data = self.writeRead('getRunningAverageMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 154(0x9a)
+    # 154(0x9a)
     def getGyroscopeRange(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getGyroscopeRange")
+        fail_byte, t_stamp, data = self.writeRead('getGyroscopeRange')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 155(0x9b)
+    # 155(0x9b)
     def getCompassRange(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCompassRange")
+        fail_byte, t_stamp, data = self.writeRead('getCompassRange')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 156(0x9c)
+    # 156(0x9c)
     def getEulerAngleDecompositionOrder(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getEulerAngleDecompositionOrder")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getEulerAngleDecompositionOrder')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 157(0x9d)
+    # 157(0x9d)
     def getMagnetoresistiveThreshold(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getMagnetoresistiveThreshold")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getMagnetoresistiveThreshold')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 158(0x9e)
+    # 158(0x9e)
     def getAccelerometerResistanceThreshold(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getAccelerometerResistanceThreshold")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getAccelerometerResistanceThreshold')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 159(0x9f)
+    # 159(0x9f)
     def getOffsetOrientationAsQuaternion(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getOffsetOrientationAsQuaternion")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getOffsetOrientationAsQuaternion')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 160(0xa0)
+    # 160(0xa0)
     def setCompassCalibrationCoefficients(self, matrix, bias, timestamp=False):
         arg_list = []
         arg_list.extend(matrix)
         arg_list.extend(bias)
         fail_byte, t_stamp, data = self.writeRead(
-            "setCompassCalibrationCoefficients", arg_list
-        )
+            'setCompassCalibrationCoefficients', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 161(0xa1)
+    # 161(0xa1)
     def setAccelerometerCalibrationCoefficients(self, matrix, bias, timestamp=False):
         arg_list = []
         arg_list.extend(matrix)
         arg_list.extend(bias)
         fail_byte, t_stamp, data = self.writeRead(
-            "setAccelerometerCalibrationCoefficients", arg_list
-        )
+            'setAccelerometerCalibrationCoefficients', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 162(0xa2)
+    # 162(0xa2)
     def getCompassCalibrationCoefficients(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCompassCalibrationCoefficients")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getCompassCalibrationCoefficients')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 163(0xa3)
+    # 163(0xa3)
     def getAccelerometerCalibrationCoefficients(self, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "getAccelerometerCalibrationCoefficients"
-        )
+            'getAccelerometerCalibrationCoefficients')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 164(0xa4)
+    # 164(0xa4)
     def getGyroscopeCalibrationCoefficients(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getGyroscopeCalibrationCoefficients")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getGyroscopeCalibrationCoefficients')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 165(0xa5)
+    # 165(0xa5)
     def beginGyroscopeAutoCalibration(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("beginGyroscopeAutoCalibration")
+        fail_byte, t_stamp, data = self.writeRead(
+            'beginGyroscopeAutoCalibration')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 166(0xa6)
+    # 166(0xa6)
     def setGyroscopeCalibrationCoefficients(self, matrix, bias, timestamp=False):
         arg_list = []
         arg_list.extend(matrix)
         arg_list.extend(bias)
         fail_byte, t_stamp, data = self.writeRead(
-            "setGyroscopeCalibrationCoefficients", arg_list
-        )
+            'setGyroscopeCalibrationCoefficients', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 169(0xa9)
+    # 169(0xa9)
     def setCalibrationMode(self, mode, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setCalibrationMode", mode)
+        fail_byte, t_stamp, data = self.writeRead('setCalibrationMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 170(0xaa)
+    # 170(0xaa)
     def getCalibrationMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getCalibrationMode")
+        fail_byte, t_stamp, data = self.writeRead('getCalibrationMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 171(0xab)
+    # 171(0xab)
     def setOrthoCalibrationDataPointFromCurrentOrientation(self, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setOrthoCalibrationDataPointFromCurrentOrientation"
-        )
+            'setOrthoCalibrationDataPointFromCurrentOrientation')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 172(0xac)
-    def setOrthoCalibrationDataPointFromVector(
-        self, type, index, vector, timestamp=False
-    ):
+    # 172(0xac)
+    def setOrthoCalibrationDataPointFromVector(self, type, index, vector, timestamp=False):
         arg_list = (type, index, vector)
         fail_byte, t_stamp, data = self.writeRead(
-            "setOrthoCalibrationDataPointFromVector", arg_list
-        )
+            'setOrthoCalibrationDataPointFromVector', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 173(0xad)
+    # 173(0xad)
     def getOrthoCalibrationDataPoint(self, type, index, timestamp=False):
         arg_list = (type, index)
         fail_byte, t_stamp, data = self.writeRead(
-            "getOrthoCalibrationDataPoint", arg_list
-        )
+            'getOrthoCalibrationDataPoint', arg_list)
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 174(0xae)
+    # 174(0xae)
     def performOrthoCalibration(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("performOrthoCalibration")
+        fail_byte, t_stamp, data = self.writeRead('performOrthoCalibration')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 175(0xaf)
+    # 175(0xaf)
     def clearOrthoCalibrationData(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("clearOrthoCalibrationData")
+        fail_byte, t_stamp, data = self.writeRead('clearOrthoCalibrationData')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 227(0xe3)
+    # 227(0xe3)
     def setSleepMode(self, mode, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setSleepMode", mode)
+        fail_byte, t_stamp, data = self.writeRead('setSleepMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 228(0xe4)
+    # 228(0xe4)
     def getSleepMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getSleepMode")
+        fail_byte, t_stamp, data = self.writeRead('getSleepMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 240(0xf0)
+    # 240(0xf0)
     def setJoystickEnabled(self, enabled, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setJoystickEnabled", enabled)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setJoystickEnabled', enabled)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 241(0xf1)
+    # 241(0xf1)
     def setMouseEnabled(self, enabled, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setMouseEnabled", enabled)
+        fail_byte, t_stamp, data = self.writeRead('setMouseEnabled', enabled)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 242(0xf2)
+    # 242(0xf2)
     def getJoystickEnabled(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getJoystickEnabled")
+        fail_byte, t_stamp, data = self.writeRead('getJoystickEnabled')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 243(0xf3)
+    # 243(0xf3)
     def getMouseEnabled(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getMouseEnabled")
+        fail_byte, t_stamp, data = self.writeRead('getMouseEnabled')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 244(0xf4)
-    def setControlMode(
-        self, control_class, control_index, handler_index, timestamp=False
-    ):
+    # 244(0xf4)
+    def setControlMode(self, control_class, control_index, handler_index, timestamp=False):
         arg_list = (control_class, control_index, handler_index)
-        fail_byte, t_stamp, data = self.writeRead("setControlMode", arg_list)
+        fail_byte, t_stamp, data = self.writeRead('setControlMode', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 245(0xf5)
-    def setControlData(
-        self,
-        control_class,
-        control_index,
-        data_point_index,
-        data_point,
-        timestamp=False,
-    ):
+    # 245(0xf5)
+    def setControlData(self, control_class, control_index, data_point_index, data_point, timestamp=False):
         arg_list = (control_class, control_index, data_point_index, data_point)
-        fail_byte, t_stamp, data = self.writeRead("setControlData", arg_list)
+        fail_byte, t_stamp, data = self.writeRead('setControlData', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 246(0xf6)
+    # 246(0xf6)
     def getControlMode(self, control_class, control_index, timestamp=False):
         arg_list = (control_class, control_index)
-        fail_byte, t_stamp, data = self.writeRead("getControlMode", arg_list)
+        fail_byte, t_stamp, data = self.writeRead('getControlMode', arg_list)
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 247(0xf7)
-    def getControlData(
-        self, control_class, control_index, handler_index, timestamp=False
-    ):
+    # 247(0xf7)
+    def getControlData(self, control_class, control_index, handler_index, timestamp=False):
         arg_list = (control_class, control_index, handler_index)
-        fail_byte, t_stamp, data = self.writeRead("getControlData", arg_list)
+        fail_byte, t_stamp, data = self.writeRead('getControlData', arg_list)
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 251(0xfb)
+    # 251(0xfb)
     def setMouseAbsoluteRelativeMode(self, mode, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setMouseAbsoluteRelativeMode", mode)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setMouseAbsoluteRelativeMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 252(0xfc)
+    # 252(0xfc)
     def getMouseAbsoluteRelativeMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getMouseAbsoluteRelativeMode")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getMouseAbsoluteRelativeMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
 
-## END generated functions USB and WL_ and EM_ and DL_ and BT_
+# END generated functions USB and WL_ and EM_ and DL_ and BT_
 
 
 class TSUSBSensor(_TSSensor):
     command_dict = _TSSensor.command_dict.copy()
-    command_dict.update(
-        {
-            "_setUARTBaudRate": (0xE7, 0, None, 4, ">I", 1),
-            "getUARTBaudRate": (0xE8, 4, ">I", 0, None, 1),
-            "getButtonState": (0xFA, 1, ">B", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        '_setUARTBaudRate': (0xe7, 0, None, 4, '>I', 1),
+        'getUARTBaudRate': (0xe8, 4, '>I', 0, None, 1),
+        'getButtonState': (0xfa, 1, '>B', 0, None, 1)
+    })
 
-    reverse_command_dict = dict(map(lambda x: [x[1][0], x[0]], command_dict.items()))
+    reverse_command_dict = dict(
+        map(lambda x: [x[1][0], x[0]], command_dict.items()))
 
     _device_types = ["USB", "USB-HH", "MUSB", "MUSB-HH", "USBWT", "USBWT-HH"]
 
-    def __new__(
-        cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
         if com_port is None:
             return None
         if com_port:
@@ -2714,75 +2557,65 @@ class TSUSBSensor(_TSSensor):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5)
             if serial_port is not None:
                 new_inst = super(_TSSensor, cls).__new__(cls)
-                serial_port.write(bytearray((0xF7, 0x56, 0x56)))
+                serial_port.write(bytearray((0xf7, 0x56, 0x56)))
                 time.sleep(0.01)
                 serial_port.flushInput()
-                return _generateSensorClass(
-                    new_inst, serial_port, TSUSBSensor._device_types
-                )
-        _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, TSUSBSensor._device_types)
+        _print('Error serial port was not made')
 
-    ## 231(0xe7)
+    # 231(0xe7)
     def setUARTBaudRate(self, baud_rate, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("_setUARTBaudRate", baud_rate)
+        fail_byte, t_stamp, data = self.writeRead(
+            '_setUARTBaudRate', baud_rate)
         if not fail_byte:
             self.baudrate = baud_rate
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## generated functions USB
-    ## 232(0xe8)
+    # generated functions USB
+    # 232(0xe8)
     def getUARTBaudRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUARTBaudRate")
+        fail_byte, t_stamp, data = self.writeRead('getUARTBaudRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 250(0xfa)
+    # 250(0xfa)
     def getButtonState(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getButtonState")
+        fail_byte, t_stamp, data = self.writeRead('getButtonState')
         if timestamp:
             return (data, t_stamp)
         return data
 
 
-## END generated functions USB
+# END generated functions USB
 
 
 class TSWLSensor(_TSSensor):
     command_dict = _TSSensor.command_dict.copy()
-    command_dict.update(
-        {
-            "_getWirelessPanID": (0xC0, 2, ">H", 0, None, 1),
-            "_setWirelessPanID": (0xC1, 0, None, 2, ">H", 1),
-            "_getWirelessChannel": (0xC2, 1, ">B", 0, None, 1),
-            "_setWirelessChannel": (0xC3, 0, None, 1, ">B", 1),
-            "commitWirelessSettings": (0xC5, 0, None, 0, None, 1),
-            "getWirelessAddress": (0xC6, 2, ">H", 0, None, 1),
-            "getBatteryVoltage": (0xC9, 4, ">f", 0, None, 1),
-            "getBatteryPercentRemaining": (0xCA, 1, ">B", 0, None, 1),
-            "getBatteryStatus": (0xCB, 1, ">B", 0, None, 1),
-            "getButtonState": (0xFA, 1, ">B", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        '_getWirelessPanID': (0xc0, 2, '>H', 0, None, 1),
+        '_setWirelessPanID': (0xc1, 0, None, 2, '>H', 1),
+        '_getWirelessChannel': (0xc2, 1, '>B', 0, None, 1),
+        '_setWirelessChannel': (0xc3, 0, None, 1, '>B', 1),
+        'commitWirelessSettings': (0xc5, 0, None, 0, None, 1),
+        'getWirelessAddress': (0xc6, 2, '>H', 0, None, 1),
+        'getBatteryVoltage': (0xc9, 4, '>f', 0, None, 1),
+        'getBatteryPercentRemaining': (0xca, 1, '>B', 0, None, 1),
+        'getBatteryStatus': (0xcb, 1, '>B', 0, None, 1),
+        'getButtonState': (0xfa, 1, '>B', 0, None, 1)
+    })
 
-    reverse_command_dict = dict(map(lambda x: [x[1][0], x[0]], command_dict.items()))
+    reverse_command_dict = dict(
+        map(lambda x: [x[1][0], x[0]], command_dict.items()))
 
     _device_types = ["WL", "WL-HH", "MWL"]
 
-    def __new__(
-        cls,
-        com_port=None,
-        baudrate=_baudrate,
-        timestamp_mode=TSS_TIMESTAMP_SENSOR,
-        logical_id=None,
-        dongle=None,
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR, logical_id=None, dongle=None):
         if com_port is None and logical_id is None and dongle is None:
             return None
         if com_port:
@@ -2797,24 +2630,20 @@ class TSWLSensor(_TSSensor):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5)
             if serial_port is not None:
                 new_inst = super(_TSSensor, cls).__new__(cls)
                 new_inst.dongle = None
                 new_inst.logical_id = None
-                serial_port.write(bytearray((0xF7, 0x56, 0x56)))
+                serial_port.write(bytearray((0xf7, 0x56, 0x56)))
                 time.sleep(0.01)
                 serial_port.flushInput()
-                return _generateSensorClass(
-                    new_inst, serial_port, TSWLSensor._device_types
-                )
-            _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, TSWLSensor._device_types)
+            _print('Error serial port was not made')
         if logical_id is not None and dongle:
             for tries in range(_wireless_retries + 1):
                 fail_byte, timestamp, serial_number = dongle.faWriteRead(
-                    logical_id, "getSerialNumber"
-                )
+                    logical_id, 'getSerialNumber')
                 if not fail_byte:
                     if serial_number in global_sensorlist:
                         rtn_inst = global_sensorlist[serial_number]
@@ -2830,12 +2659,10 @@ class TSWLSensor(_TSSensor):
                         new_inst = super(_TSSensor, cls).__new__(cls)
                         for tries in range(_wireless_retries + 1):
                             fail_byte, timestamp, hardware_version = dongle.faWriteRead(
-                                logical_id, "getHardwareVersionString"
-                            )
+                                logical_id, 'getHardwareVersionString')
                             if not fail_byte:
-                                new_inst.device_type = convertString(hardware_version)[
-                                    4:-8
-                                ].strip()
+                                new_inst.device_type = convertString(
+                                    hardware_version)[4:-8].strip()
                                 break
                         else:
                             new_inst.device_type = "WL"
@@ -2851,25 +2678,16 @@ class TSWLSensor(_TSSensor):
                         return new_inst
             _print("raise wireless fail error here")
             return None
-        _print("this sould never happen")
+        _print('this sould never happen')
         return None
 
-    def __init__(
-        self,
-        com_port=None,
-        baudrate=_baudrate,
-        timestamp_mode=TSS_TIMESTAMP_SENSOR,
-        logical_id=None,
-        dongle=None,
-    ):
-        self.protocol_args = {
-            "success_failure": True,
-            "timestamp": True,
-            "command_echo": True,
-            "data_length": True,
-        }
+    def __init__(self, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR, logical_id=None, dongle=None):
+        self.protocol_args = {'success_failure': True,
+                              'timestamp': True,
+                              'command_echo': True,
+                              'data_length': True}
         if timestamp_mode != TSS_TIMESTAMP_SENSOR:
-            self.protocol_args["timestamp"] = False
+            self.protocol_args['timestamp'] = False
         self.timestamp_mode = timestamp_mode
         self.baudrate = baudrate
         reinit = False
@@ -2898,7 +2716,8 @@ class TSWLSensor(_TSSensor):
     def _wirlessWriteRead(self, command, input_list=None):
         result = (True, None, None)
         for i in range(_wireless_retries + 1):
-            result = self.dongle.faWriteRead(self.logical_id, command, input_list)
+            result = self.dongle.faWriteRead(
+                self.logical_id, command, input_list)
             if not result[0]:
                 break
         return result
@@ -2917,136 +2736,134 @@ class TSWLSensor(_TSSensor):
             return True
         return False
 
-    ## 192(0xc0)
+    # 192(0xc0)
     def getWirelessPanID(self, timestamp=False):
         t_stamp = None
         data = None
-        fail_byte, t_stamp, data = self.writeRead("_getWirelessPanID")
+        fail_byte, t_stamp, data = self.writeRead('_getWirelessPanID')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 193(0xc1)
+    # 193(0xc1)
     def setWirelessPanID(self, PanID, timestamp=False):
         t_stamp = None
         fail_byte = True
         if not self.wireless_com:
-            fail_byte, t_stamp, data = self.writeRead("_setWirelessPanID", PanID)
+            fail_byte, t_stamp, data = self.writeRead(
+                '_setWirelessPanID', PanID)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 194(0xc2)
+    # 194(0xc2)
     def getWirelessChannel(self, timestamp=False):
         t_stamp = None
         data = None
-        fail_byte, t_stamp, data = self.writeRead("_getWirelessChannel")
+        fail_byte, t_stamp, data = self.writeRead('_getWirelessChannel')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 195(0xc3)
+    # 195(0xc3)
     def setWirelessChannel(self, channel, timestamp=False):
         t_stamp = None
         fail_byte = True
         if not self.wireless_com:
-            fail_byte, t_stamp, data = self.writeRead("_setWirelessChannel", channel)
+            fail_byte, t_stamp, data = self.writeRead(
+                '_setWirelessChannel', channel)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## generated functions WL_
-    ## 197(0xc5)
+    # generated functions WL_
+    # 197(0xc5)
     def commitWirelessSettings(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("commitWirelessSettings")
+        fail_byte, t_stamp, data = self.writeRead('commitWirelessSettings')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 198(0xc6)
+    # 198(0xc6)
     def getWirelessAddress(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessAddress")
+        fail_byte, t_stamp, data = self.writeRead('getWirelessAddress')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 201(0xc9)
+    # 201(0xc9)
     def getBatteryVoltage(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryVoltage")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryVoltage')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 202(0xca)
+    # 202(0xca)
     def getBatteryPercentRemaining(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryPercentRemaining")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryPercentRemaining')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 203(0xcb)
+    # 203(0xcb)
     def getBatteryStatus(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryStatus")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryStatus')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 250(0xfa)
+    # 250(0xfa)
     def getButtonState(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getButtonState")
+        fail_byte, t_stamp, data = self.writeRead('getButtonState')
         if timestamp:
             return (data, t_stamp)
         return data
 
 
-## END generated functions WL_
+# END generated functions WL_
 
 
 class TSDongle(_TSBase):
     command_dict = _TSBase.command_dict.copy()
-    command_dict.update(
-        {
-            "setWirelessStreamingAutoFlushMode": (0xB0, 0, None, 1, ">B", 1),
-            "getWirelessStreamingAutoFlushMode": (0xB1, 1, ">B", 0, None, 1),
-            "_setWirelessStreamingManualFlushBitfield": (0xB2, 0, None, 2, ">H", 1),
-            "_getWirelessStreamingManualFlushBitfield": (0xB3, 2, ">H", 0, None, 1),
-            "_getManualFlushSingle": (0xB4, 0, None, 1, ">B", 1),
-            "_getManualFlushBulk": (0xB5, 0, None, 0, None, 1),
-            "broadcastSynchronizationPulse": (0xB6, 0, None, 0, None, 1),
-            "getReceptionBitfield": (0xB7, 2, ">H", 0, None, 1),
-            "getWirelessPanID": (0xC0, 2, ">H", 0, None, 1),
-            "setWirelessPanID": (0xC1, 0, None, 2, ">H", 1),
-            "getWirelessChannel": (0xC2, 1, ">B", 0, None, 1),
-            "setWirelessChannel": (0xC3, 0, None, 1, ">B", 1),
-            "commitWirelessSettings": (0xC5, 0, None, 0, None, 1),
-            "getWirelessAddress": (0xC6, 2, ">H", 0, None, 1),
-            "getSerialNumberAtLogicalID": (0xD0, 4, ">I", 1, ">B", 1),
-            "_setSerialNumberAtLogicalID": (0xD1, 0, None, 5, ">BI", 1),
-            "getWirelessChannelNoiseLevels": (0xD2, 16, ">16B", 0, None, 1),
-            "setWirelessRetries": (0xD3, 0, None, 1, ">B", 1),
-            "getWirelessRetries": (0xD4, 1, ">B", 0, None, 1),
-            "getWirelessSlotsOpen": (0xD5, 1, ">B", 0, None, 1),
-            "getSignalStrength": (0xD6, 1, ">B", 0, None, 1),
-            "setWirelessHIDUpdateRate": (0xD7, 0, None, 1, ">B", 1),
-            "getWirelessHIDUpdateRate": (0xD8, 1, ">B", 0, None, 1),
-            "setWirelessHIDAsynchronousMode": (0xD9, 0, None, 1, ">B", 1),
-            "getWirelessHIDAsynchronousMode": (0xDA, 1, ">B", 0, None, 1),
-            "_setWirelessResponseHeaderBitfield": (0xDB, 0, None, 4, ">I", 1),
-            "_getWirelessResponseHeaderBitfield": (0xDC, 4, ">I", 0, None, 1),
-            "setJoystickLogicalID": (0xF0, 0, None, 1, ">B", 1),
-            "setMouseLogicalID": (0xF1, 0, None, 1, ">B", 1),
-            "getJoystickLogicalID": (0xF2, 1, ">B", 0, None, 1),
-            "getMouseLogicalID": (0xF3, 1, ">B", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        'setWirelessStreamingAutoFlushMode': (0xb0, 0, None, 1, '>B', 1),
+        'getWirelessStreamingAutoFlushMode': (0xb1, 1, '>B', 0, None, 1),
+        '_setWirelessStreamingManualFlushBitfield': (0xb2, 0, None, 2, '>H', 1),
+        '_getWirelessStreamingManualFlushBitfield': (0xb3, 2, '>H', 0, None, 1),
+        '_getManualFlushSingle': (0xb4, 0, None, 1, '>B', 1),
+        '_getManualFlushBulk': (0xb5, 0, None, 0, None, 1),
+        'broadcastSynchronizationPulse': (0xb6, 0, None, 0, None, 1),
+        'getReceptionBitfield': (0xb7, 2, '>H', 0, None, 1),
+        'getWirelessPanID': (0xc0, 2, '>H', 0, None, 1),
+        'setWirelessPanID': (0xc1, 0, None, 2, '>H', 1),
+        'getWirelessChannel': (0xc2, 1, '>B', 0, None, 1),
+        'setWirelessChannel': (0xc3, 0, None, 1, '>B', 1),
+        'commitWirelessSettings': (0xc5, 0, None, 0, None, 1),
+        'getWirelessAddress': (0xc6, 2, '>H', 0, None, 1),
+        'getSerialNumberAtLogicalID': (0xd0, 4, '>I', 1, '>B', 1),
+        '_setSerialNumberAtLogicalID': (0xd1, 0, None, 5, '>BI', 1),
+        'getWirelessChannelNoiseLevels': (0xd2, 16, '>16B', 0, None, 1),
+        'setWirelessRetries': (0xd3, 0, None, 1, '>B', 1),
+        'getWirelessRetries': (0xd4, 1, '>B', 0, None, 1),
+        'getWirelessSlotsOpen': (0xd5, 1, '>B', 0, None, 1),
+        'getSignalStrength': (0xd6, 1, '>B', 0, None, 1),
+        'setWirelessHIDUpdateRate': (0xd7, 0, None, 1, '>B', 1),
+        'getWirelessHIDUpdateRate': (0xd8, 1, '>B', 0, None, 1),
+        'setWirelessHIDAsynchronousMode': (0xd9, 0, None, 1, '>B', 1),
+        'getWirelessHIDAsynchronousMode': (0xda, 1, '>B', 0, None, 1),
+        '_setWirelessResponseHeaderBitfield': (0xdb, 0, None, 4, '>I', 1),
+        '_getWirelessResponseHeaderBitfield': (0xdc, 4, '>I', 0, None, 1),
+        'setJoystickLogicalID': (0xf0, 0, None, 1, '>B', 1),
+        'setMouseLogicalID': (0xf1, 0, None, 1, '>B', 1),
+        'getJoystickLogicalID': (0xf2, 1, '>B', 0, None, 1),
+        'getMouseLogicalID': (0xf3, 1, '>B', 0, None, 1)
+    })
 
     wl_command_dict = TSWLSensor.command_dict.copy()
 
     _device_types = ["DNG"]
 
-    def __new__(
-        cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
         if com_port:
             if type(com_port) is str:
                 port_name = com_port
@@ -3059,52 +2876,47 @@ class TSDongle(_TSBase):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5)
             if serial_port is not None:
                 new_inst = super(TSDongle, cls).__new__(cls)
-                serial_port.write(bytearray((0xF7, 0x56, 0x56)))
+                serial_port.write(bytearray((0xf7, 0x56, 0x56)))
                 time.sleep(0.05)
                 serial_port.flushInput()
                 checkSoftwareVersionFromPort(serial_port)
-                serial_port.write(bytearray((0xF7, 0xB7, 0xB7)))
-                reception_bitfield = struct.unpack(">H", serial_port.read(2))[0]
+                serial_port.write(bytearray((0xf7, 0xb7, 0xb7)))
+                reception_bitfield = struct.unpack(
+                    '>H', serial_port.read(2))[0]
                 idx = 1
                 for i in range(15):
                     if idx & reception_bitfield:
                         count = 0
-                        serial_port.write(bytearray((0xF7, 0xD0, i, 0xD0 + i)))
-                        wl_id = struct.unpack(">I", serial_port.read(4))[0]
+                        serial_port.write(bytearray((0xf7, 0xd0, i, 0xd0 + i)))
+                        wl_id = struct.unpack('>I', serial_port.read(4))[0]
                         while count < 15:
                             count += 1
-                            serial_port.write(bytearray((0xF8, i, 0x56, 0x56 + i)))
-                            did_fail = struct.unpack(">B", serial_port.read(1))[0]
+                            serial_port.write(
+                                bytearray((0xf8, i, 0x56, 0x56 + i)))
+                            did_fail = struct.unpack(
+                                '>B', serial_port.read(1))[0]
                             if did_fail:
                                 serial_port.read(1)
                             else:
-                                _print(
-                                    "Stopped {0:08X} on try {1:d}".format(wl_id, count)
-                                )
+                                _print("Stopped {0:08X} on try {1:d}".format(
+                                    wl_id, count))
                                 serial_port.read(2)
                                 break
                     idx <<= 1
-                return _generateSensorClass(
-                    new_inst, serial_port, TSDongle._device_types
-                )
-        _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, TSDongle._device_types)
+        _print('Error serial port was not made')
 
-    def __init__(
-        self, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
-        self.protocol_args = {
-            "success_failure": True,
-            "timestamp": True,
-            "command_echo": True,
-            "logical_id": True,
-            "data_length": True,
-        }
+    def __init__(self, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
+        self.protocol_args = {'success_failure': True,
+                              'timestamp': True,
+                              'command_echo': True,
+                              'logical_id': True,
+                              'data_length': True}
         if timestamp_mode != TSS_TIMESTAMP_SENSOR:
-            self.protocol_args["timestamp"] = False
+            self.protocol_args['timestamp'] = False
         self.timestamp_mode = timestamp_mode
         self.baudrate = baudrate
         reinit = False
@@ -3125,18 +2937,17 @@ class TSDongle(_TSBase):
             _print("tryport fail")
         try:
             serial_port = serial.Serial(
-                self.port_name, baudrate=self.baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                self.port_name, baudrate=self.baudrate, timeout=0.5, writeTimeout=0.5)
             serial_port.applySettingsDict(self.serial_port_settings)
             self.serial_port = serial_port
             self.setWirelessStreamingAutoFlushMode(0)
             time.sleep(0.05)
             self.serial_port.flushInput()
             for i in range(15):
-                serial_port.write(bytearray((0xF7, 0xD0, i, 0xD0 + i)))
+                serial_port.write(bytearray((0xf7, 0xd0, i, 0xd0 + i)))
                 for i in range(10):
                     try:
-                        wl_id = struct.unpack(">I", serial_port.read(4))[0]
+                        wl_id = struct.unpack('>I', serial_port.read(4))[0]
                     except:
                         continue
                     break
@@ -3144,12 +2955,13 @@ class TSDongle(_TSBase):
                     count = 0
                     while count < 25:
                         count += 1
-                        serial_port.write(bytearray((0xF8, i, 0x56, 0x56 + i)))
-                        did_fail = struct.unpack(">B", serial_port.read(1))[0]
+                        serial_port.write(bytearray((0xf8, i, 0x56, 0x56 + i)))
+                        did_fail = struct.unpack('>B', serial_port.read(1))[0]
                         if did_fail:
                             serial_port.read(1)
                         else:
-                            _print("Stopped {0:08X} on try {1:d}".format(wl_id, count))
+                            _print("Stopped {0:08X} on try {1:d}".format(
+                                wl_id, count))
                             serial_port.read(2)
                             break
         except:
@@ -3161,48 +2973,41 @@ class TSDongle(_TSBase):
         return True
 
     def _setupBaseVariables(self):
-        self.serial_number_hex = "{0:08X}".format(self.serial_number)
+        self.serial_number_hex = '{0:08X}'.format(self.serial_number)
         self.wireless_table = [0] * 15
         for i in range(15):
-            tmp_id = self.f7WriteRead("getSerialNumberAtLogicalID", i)
+            tmp_id = self.f7WriteRead('getSerialNumberAtLogicalID', i)
             if tmp_id not in self.wireless_table or tmp_id == 0:
                 self.wireless_table[i] = tmp_id
             else:
-                self.f7WriteRead("_setSerialNumberAtLogicalID", (i, 0))
+                self.f7WriteRead('_setSerialNumberAtLogicalID', (i, 0))
 
-    def _setupProtocolHeader(
-        self,
-        success_failure=False,
-        timestamp=False,
-        command_echo=False,
-        checksum=False,
-        logical_id=False,
-        serial_number=False,
-        data_length=False,
-    ):
-        protocol_header = _generateProtocolHeader(
-            success_failure,
-            timestamp,
-            command_echo,
-            checksum,
-            logical_id,
-            serial_number,
-            data_length,
-        )
+    def _setupProtocolHeader(self, success_failure=False,
+                             timestamp=False,
+                             command_echo=False,
+                             checksum=False,
+                             logical_id=False,
+                             serial_number=False,
+                             data_length=False):
+        protocol_header = _generateProtocolHeader(success_failure,
+                                                  timestamp,
+                                                  command_echo,
+                                                  checksum,
+                                                  logical_id,
+                                                  serial_number,
+                                                  data_length)
         protocol_byte, self.header_parse, self.header_idx_lst = protocol_header
-        d_header = self.f7WriteRead("_getWiredResponseHeaderBitfield")
-        dwl_header = self.f7WriteRead("_getWirelessResponseHeaderBitfield")
+        d_header = self.f7WriteRead('_getWiredResponseHeaderBitfield')
+        dwl_header = self.f7WriteRead('_getWirelessResponseHeaderBitfield')
         if d_header != protocol_byte or dwl_header != protocol_byte:
-            self.f7WriteRead("_setWiredResponseHeaderBitfield", protocol_byte)
-            self.f7WriteRead("_setWirelessResponseHeaderBitfield", protocol_byte)
-            d_header = self.f7WriteRead("_getWiredResponseHeaderBitfield")
-            dwl_header = self.f7WriteRead("_getWirelessResponseHeaderBitfield")
+            self.f7WriteRead('_setWiredResponseHeaderBitfield', protocol_byte)
+            self.f7WriteRead(
+                '_setWirelessResponseHeaderBitfield', protocol_byte)
+            d_header = self.f7WriteRead('_getWiredResponseHeaderBitfield')
+            dwl_header = self.f7WriteRead('_getWirelessResponseHeaderBitfield')
         if d_header != protocol_byte or dwl_header != protocol_byte:
-            print(
-                "!!!!!fail d_header={0}, dwl_header={1}, protocol_header_byte={2}".format(
-                    d_header, dwl_header, protocol_byte
-                )
-            )
+            print("!!!!!fail d_header={0}, dwl_header={1}, protocol_header_byte={2}".format(
+                d_header, dwl_header, protocol_byte))
             raise Exception
 
     # Wireless Old Protocol WriteRead
@@ -3215,13 +3020,13 @@ class TSDongle(_TSBase):
                 packed_data = struct.pack(in_struct, *input_list)
             else:
                 packed_data = struct.pack(in_struct, input_list)
-        write_array = makeWriteArray(0xF8, logical_id, cmd_byte, packed_data)
+        write_array = makeWriteArray(0xf8, logical_id, cmd_byte, packed_data)
         self.serial_port.write(write_array)
         rtn_list = []
         output_data = self.serial_port.read(2)
         if len(output_data) == 2:
-            fail_byte = struct.unpack(">B", output_data[0])[0]
-            logical_id_byte = struct.unpack(">B", output_data[1])[0]
+            fail_byte = struct.unpack('>B', output_data[0])[0]
+            logical_id_byte = struct.unpack('>B', output_data[1])[0]
             rtn_list.append(fail_byte)
             if not fail_byte:
                 self.serial_port.read(1)
@@ -3235,28 +3040,25 @@ class TSDongle(_TSBase):
             return rtn_list[0]
         return True
 
-    ## Wireless New Protocol WriteRead
+    # Wireless New Protocol WriteRead
     def faWriteRead(self, logical_id, command, input_list=None):
         global global_counter
         command_args = self.wl_command_dict[command]
         cmd_byte, out_len, out_struct, in_len, in_struct, compatibility = command_args
         if self.compatibility < compatibility:
             raise Exception(
-                "Firmware for device on ( %s ) is out of date for this function. Recommend updating to latest firmware."
-                % self.serial_port.name
-            )
+                "Firmware for device on ( %s ) is out of date for this function. Recommend updating to latest firmware." % self.serial_port.name)
         packed_data = None
         if in_struct:
             if type(input_list) in (list, tuple):
                 packed_data = struct.pack(in_struct, *input_list)
             else:
                 packed_data = struct.pack(in_struct, input_list)
-        write_array = makeWriteArray(0xFA, logical_id, cmd_byte, packed_data)
+        write_array = makeWriteArray(0xfa, logical_id, cmd_byte, packed_data)
 
         while len(self.read_queue) > 15:
             _print(
-                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!too many commands!!!!!"
-            )
+                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!too many commands!!!!!")
             time.sleep(0.01)
         self.read_lock.acquire()
         uid = global_counter
@@ -3278,19 +3080,18 @@ class TSDongle(_TSBase):
             # _print("SerialTimeoutException!!!!")
             return (True, None, None)
         queue_packet = (uid, cmd_byte)
-        timeout_time = 0.5 + (
-            len(self.read_queue) * 0.150
-        )  # timeout increases as queue gets larger
+        # timeout increases as queue gets larger
+        timeout_time = 0.5 + (len(self.read_queue) * 0.150)
         self.read_queue.append(queue_packet)
-        start_time = time.perf_counter() + timeout_time
+        start_time = time.time() + timeout_time
         read_data = None
-        while timeout_time > 0:
+        while (timeout_time > 0):
             self.read_lock.wait(timeout_time)
             read_data = self.read_dict.get(uid, None)
 
             if read_data is not None:
                 break
-            timeout_time = start_time - time.perf_counter()
+            timeout_time = start_time - time.time()
             # _print("Still waiting {0} {1} {2} {3}".format(uid, command,logical_id, timeout_time))
         else:
             # _print("Operation timed out!!!!")
@@ -3346,16 +3147,12 @@ class TSDongle(_TSBase):
                 return rtn_inst
             elif rtn_inst.dongle is None:
                 _print("updating sensor {0:08X} to be wireless".format(hw_id))
-                return TSWLSensor(
-                    timestamp_mode=self.timestamp_mode, dongle=self, logical_id=idx
-                )
+                return TSWLSensor(timestamp_mode=self.timestamp_mode, dongle=self, logical_id=idx)
             return None
         # Else, make a new TSWLSensor
         else:
             _print("making new sensor {0:08X}".format(hw_id))
-            return TSWLSensor(
-                timestamp_mode=self.timestamp_mode, dongle=self, logical_id=idx
-            )
+            return TSWLSensor(timestamp_mode=self.timestamp_mode, dongle=self, logical_id=idx)
 
     def getSensorFromDongle(self, idx):
         return self.__getitem__(idx)
@@ -3387,8 +3184,8 @@ class TSDongle(_TSBase):
         while self.data_loop:
             try:
                 self._readDataWirelessProHeader()
-            except (KeyboardInterrupt):
-                print("\n! Received keyboard interrupt, quitting threads.\n")
+            except(KeyboardInterrupt):
+                print('\n! Received keyboard interrupt, quitting threads.\n')
                 raise KeyboardInterrupt  # fix bug where a thread eats the interupt
                 break
             except:
@@ -3412,28 +3209,19 @@ class TSDongle(_TSBase):
                 header_data = self.header_parse.unpack(header_bytes)
                 header_list = padProtocolHeader87(header_data)
             elif self.timestamp_mode == TSS_TIMESTAMP_SYSTEM:
-                sys_timestamp = (
-                    time.perf_counter()
-                )  # time packet was parsed it might been in the system buffer a few ms
+                # time packet was parsed it might been in the system buffer a few ms
+                sys_timestamp = time.time()
                 sys_timestamp *= 1000000
                 header_data = self.header_parse.unpack(header_bytes)
                 header_list = padProtocolHeader85(header_data, sys_timestamp)
             else:
                 header_data = self.header_parse.unpack(header_bytes)
                 header_list = padProtocolHeader85(header_data, None)
-            (
-                fail_byte,
-                timestamp,
-                cmd_echo,
-                ck_sum,
-                rtn_log_id,
-                sn,
-                data_size,
-            ) = header_list
+            fail_byte, timestamp, cmd_echo, ck_sum, rtn_log_id, sn, data_size = header_list
             # _print("!!!!fail_byte={0}, cmd_echo={1}, rtn_log_id={2}, data_size={3}".format(fail_byte, cmd_echo, rtn_log_id, data_size))
             output_data = _serial_port.read(data_size)
 
-            if cmd_echo == 0xFF:
+            if cmd_echo is 0xff:
                 if data_size:
                     self[rtn_log_id]._parseStreamData(timestamp, output_data)
                 return
@@ -3457,218 +3245,218 @@ class TSDongle(_TSBase):
             # _print("no status bytes")
             self.read_lock.release()
 
-    ## 209(0xd1)
+    # 209(0xd1)
     def setSerialNumberAtLogicalID(self, logical_id, serial_number, timestamp=False):
         arg_list = (logical_id, serial_number)
         fail_byte, t_stamp, data = self.writeRead(
-            "_setSerialNumberAtLogicalID", arg_list
-        )
+            '_setSerialNumberAtLogicalID', arg_list)
         if not fail_byte:
             self.wireless_table[logical_id] = serial_number
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## generated functions DNG
-    ## 176(0xb0)
+    # generated functions DNG
+    # 176(0xb0)
     def setWirelessStreamingAutoFlushMode(self, mode, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setWirelessStreamingAutoFlushMode", mode
-        )
+            'setWirelessStreamingAutoFlushMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 177(0xb1)
+    # 177(0xb1)
     def getWirelessStreamingAutoFlushMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessStreamingAutoFlushMode")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getWirelessStreamingAutoFlushMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 182(0xb6)
+    # 182(0xb6)
     def broadcastSynchronizationPulse(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("broadcastSynchronizationPulse")
+        fail_byte, t_stamp, data = self.writeRead(
+            'broadcastSynchronizationPulse')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 183(0xb7)
+    # 183(0xb7)
     def getReceptionBitfield(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getReceptionBitfield")
+        fail_byte, t_stamp, data = self.writeRead('getReceptionBitfield')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 192(0xc0)
+    # 192(0xc0)
     def getWirelessPanID(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessPanID")
+        fail_byte, t_stamp, data = self.writeRead('getWirelessPanID')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 193(0xc1)
+    # 193(0xc1)
     def setWirelessPanID(self, PanID, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setWirelessPanID", PanID)
+        fail_byte, t_stamp, data = self.writeRead('setWirelessPanID', PanID)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 194(0xc2)
+    # 194(0xc2)
     def getWirelessChannel(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessChannel")
+        fail_byte, t_stamp, data = self.writeRead('getWirelessChannel')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 195(0xc3)
+    # 195(0xc3)
     def setWirelessChannel(self, channel, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setWirelessChannel", channel)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setWirelessChannel', channel)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 197(0xc5)
+    # 197(0xc5)
     def commitWirelessSettings(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("commitWirelessSettings")
+        fail_byte, t_stamp, data = self.writeRead('commitWirelessSettings')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 198(0xc6)
+    # 198(0xc6)
     def getWirelessAddress(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessAddress")
+        fail_byte, t_stamp, data = self.writeRead('getWirelessAddress')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 208(0xd0)
+    # 208(0xd0)
     def getSerialNumberAtLogicalID(self, logical_id, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "getSerialNumberAtLogicalID", logical_id
-        )
+            'getSerialNumberAtLogicalID', logical_id)
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 210(0xd2)
+    # 210(0xd2)
     def getWirelessChannelNoiseLevels(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessChannelNoiseLevels")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getWirelessChannelNoiseLevels')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 211(0xd3)
+    # 211(0xd3)
     def setWirelessRetries(self, retries, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setWirelessRetries", retries)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setWirelessRetries', retries)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 212(0xd4)
+    # 212(0xd4)
     def getWirelessRetries(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessRetries")
+        fail_byte, t_stamp, data = self.writeRead('getWirelessRetries')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 213(0xd5)
+    # 213(0xd5)
     def getWirelessSlotsOpen(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessSlotsOpen")
+        fail_byte, t_stamp, data = self.writeRead('getWirelessSlotsOpen')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 214(0xd6)
+    # 214(0xd6)
     def getSignalStrength(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getSignalStrength")
+        fail_byte, t_stamp, data = self.writeRead('getSignalStrength')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 215(0xd7)
+    # 215(0xd7)
     def setWirelessHIDUpdateRate(self, update_rate, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setWirelessHIDUpdateRate", update_rate
-        )
+            'setWirelessHIDUpdateRate', update_rate)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 216(0xd8)
+    # 216(0xd8)
     def getWirelessHIDUpdateRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessHIDUpdateRate")
+        fail_byte, t_stamp, data = self.writeRead('getWirelessHIDUpdateRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 217(0xd9)
+    # 217(0xd9)
     def setWirelessHIDAsynchronousMode(self, mode, timestamp=False):
         fail_byte, t_stamp, data = self.writeRead(
-            "setWirelessHIDAsynchronousMode", mode
-        )
+            'setWirelessHIDAsynchronousMode', mode)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 218(0xda)
+    # 218(0xda)
     def getWirelessHIDAsynchronousMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getWirelessHIDAsynchronousMode")
+        fail_byte, t_stamp, data = self.writeRead(
+            'getWirelessHIDAsynchronousMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 240(0xf0)
+    # 240(0xf0)
     def setJoystickLogicalID(self, logical_id, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setJoystickLogicalID", logical_id)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setJoystickLogicalID', logical_id)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 241(0xf1)
+    # 241(0xf1)
     def setMouseLogicalID(self, logical_id, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("setMouseLogicalID", logical_id)
+        fail_byte, t_stamp, data = self.writeRead(
+            'setMouseLogicalID', logical_id)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## 242(0xf2)
+    # 242(0xf2)
     def getJoystickLogicalID(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getJoystickLogicalID")
+        fail_byte, t_stamp, data = self.writeRead('getJoystickLogicalID')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 243(0xf3)
+    # 243(0xf3)
     def getMouseLogicalID(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getMouseLogicalID")
+        fail_byte, t_stamp, data = self.writeRead('getMouseLogicalID')
         if timestamp:
             return (data, t_stamp)
         return data
 
 
-## END generated functions DNG
+# END generated functions DNG
 
 
 class TSEMSensor(_TSSensor):
     command_dict = _TSSensor.command_dict.copy()
-    command_dict.update(
-        {
-            "setPinMode": (0x1D, 0, None, 2, ">BB", 1),
-            "getPinMode": (0x1E, 2, ">BB", 0, None, 1),
-            "getInterruptStatus": (0x1F, 1, ">B", 0, None, 1),
-            "_setUARTBaudRate": (0xE7, 0, None, 4, ">I", 1),
-            "getUARTBaudRate": (0xE8, 4, ">I", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        'setPinMode': (0x1d, 0, None, 2, '>BB', 1),
+        'getPinMode': (0x1e, 2, '>BB', 0, None, 1),
+        'getInterruptStatus': (0x1f, 1, '>B', 0, None, 1),
+        '_setUARTBaudRate': (0xe7, 0, None, 4, '>I', 1),
+        'getUARTBaudRate': (0xe8, 4, '>I', 0, None, 1)
+    })
 
-    reverse_command_dict = dict(map(lambda x: [x[1][0], x[0]], command_dict.items()))
+    reverse_command_dict = dict(
+        map(lambda x: [x[1][0], x[0]], command_dict.items()))
 
     _device_types = ["EM", "EM-HH"]
 
-    def __new__(
-        cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
         if com_port is None:
             return None
         if com_port:
@@ -3683,86 +3471,81 @@ class TSEMSensor(_TSSensor):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5)
             if serial_port is not None:
                 new_inst = super(_TSSensor, cls).__new__(cls)
-                serial_port.write(bytearray((0xF7, 0x56, 0x56)))
+                serial_port.write(bytearray((0xf7, 0x56, 0x56)))
                 time.sleep(0.01)
                 serial_port.flushInput()
-                return _generateSensorClass(
-                    new_inst, serial_port, TSEMSensor._device_types
-                )
-        _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, TSEMSensor._device_types)
+        _print('Error serial port was not made')
 
-    ## 231(0xe7)
+    # 231(0xe7)
     def setUARTBaudRate(self, baud_rate, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("_setUARTBaudRate", baud_rate)
+        fail_byte, t_stamp, data = self.writeRead(
+            '_setUARTBaudRate', baud_rate)
         if not fail_byte:
             self.baudrate = baud_rate
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## generated functions EM_
-    ##  29(0x1d)
+    # generated functions EM_
+    # 29(0x1d)
     def setPinMode(self, mode, pin, timestamp=False):
         arg_list = (mode, pin)
-        fail_byte, t_stamp, data = self.writeRead("setPinMode", arg_list)
+        fail_byte, t_stamp, data = self.writeRead('setPinMode', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  30(0x1e)
+    # 30(0x1e)
     def getPinMode(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getPinMode")
+        fail_byte, t_stamp, data = self.writeRead('getPinMode')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  31(0x1f)
+    # 31(0x1f)
     def getInterruptStatus(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getInterruptStatus")
+        fail_byte, t_stamp, data = self.writeRead('getInterruptStatus')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 232(0xe8)
+    # 232(0xe8)
     def getUARTBaudRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUARTBaudRate")
+        fail_byte, t_stamp, data = self.writeRead('getUARTBaudRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
 
-## END generated functions EM_
+# END generated functions EM_
 
 
 class TSDLSensor(_TSSensor):
     command_dict = _TSSensor.command_dict.copy()
-    command_dict.update(
-        {
-            "turnOnMassStorage": (0x39, 0, None, 0, None, 1),
-            "turnOffMassStorage": (0x3A, 0, None, 0, None, 1),
-            "formatAndInitializeSDCard": (0x3B, 0, None, 0, None, 1),
-            "beginDataLoggingSession": (0x3C, 0, None, 0, None, 1),
-            "endDataLoggingSession": (0x3D, 0, None, 0, None, 1),
-            "setClockValues": (0x3E, 0, None, 6, ">6B", 1),
-            "getClockValues": (0x3F, 6, ">6B", 0, None, 1),
-            "getBatteryVoltage": (0xC9, 4, ">f", 0, None, 1),
-            "getBatteryPercentRemaining": (0xCA, 1, ">B", 0, None, 1),
-            "getBatteryStatus": (0xCB, 1, ">B", 0, None, 1),
-            "getButtonState": (0xFA, 1, ">B", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        'turnOnMassStorage': (0x39, 0, None, 0, None, 1),
+        'turnOffMassStorage': (0x3a, 0, None, 0, None, 1),
+        'formatAndInitializeSDCard': (0x3b, 0, None, 0, None, 1),
+        'beginDataLoggingSession': (0x3c, 0, None, 0, None, 1),
+        'endDataLoggingSession': (0x3d, 0, None, 0, None, 1),
+        'setClockValues': (0x3e, 0, None, 6, '>6B', 1),
+        'getClockValues': (0x3f, 6, '>6B', 0, None, 1),
+        'getBatteryVoltage': (0xc9, 4, '>f', 0, None, 1),
+        'getBatteryPercentRemaining': (0xca, 1, '>B', 0, None, 1),
+        'getBatteryStatus': (0xcb, 1, '>B', 0, None, 1),
+        'getButtonState': (0xfa, 1, '>B', 0, None, 1)
+    })
 
-    reverse_command_dict = dict(map(lambda x: [x[1][0], x[0]], command_dict.items()))
+    reverse_command_dict = dict(
+        map(lambda x: [x[1][0], x[0]], command_dict.items()))
 
     _device_types = ["DL", "DL-HH"]
 
-    def __new__(
-        cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
         if com_port is None:
             return None
         if com_port:
@@ -3777,121 +3560,115 @@ class TSDLSensor(_TSSensor):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5)
             if serial_port is not None:
                 new_inst = super(_TSSensor, cls).__new__(cls)
-                serial_port.write(bytearray((0xF7, 0x56, 0x56)))
+                serial_port.write(bytearray((0xf7, 0x56, 0x56)))
                 time.sleep(0.01)
                 serial_port.flushInput()
-                return _generateSensorClass(
-                    new_inst, serial_port, TSDLSensor._device_types
-                )
-        _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, TSDLSensor._device_types)
+        _print('Error serial port was not made')
 
-    ## generated functions DL_
-    ##  57(0x39)
+    # generated functions DL_
+    # 57(0x39)
     def turnOnMassStorage(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("turnOnMassStorage")
+        fail_byte, t_stamp, data = self.writeRead('turnOnMassStorage')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  58(0x3a)
+    # 58(0x3a)
     def turnOffMassStorage(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("turnOffMassStorage")
+        fail_byte, t_stamp, data = self.writeRead('turnOffMassStorage')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  59(0x3b)
+    # 59(0x3b)
     def formatAndInitializeSDCard(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("formatAndInitializeSDCard")
+        fail_byte, t_stamp, data = self.writeRead('formatAndInitializeSDCard')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  60(0x3c)
+    # 60(0x3c)
     def beginDataLoggingSession(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("beginDataLoggingSession")
+        fail_byte, t_stamp, data = self.writeRead('beginDataLoggingSession')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  61(0x3d)
+    # 61(0x3d)
     def endDataLoggingSession(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("endDataLoggingSession")
+        fail_byte, t_stamp, data = self.writeRead('endDataLoggingSession')
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  62(0x3e)
+    # 62(0x3e)
     def setClockValues(self, month, day, year, hour, minute, second, timestamp=False):
         arg_list = (month, day, year, hour, minute, second)
-        fail_byte, t_stamp, data = self.writeRead("setClockValues", arg_list)
+        fail_byte, t_stamp, data = self.writeRead('setClockValues', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  63(0x3f)
+    # 63(0x3f)
     def getClockValues(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getClockValues")
+        fail_byte, t_stamp, data = self.writeRead('getClockValues')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 201(0xc9)
+    # 201(0xc9)
     def getBatteryVoltage(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryVoltage")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryVoltage')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 202(0xca)
+    # 202(0xca)
     def getBatteryPercentRemaining(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryPercentRemaining")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryPercentRemaining')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 203(0xcb)
+    # 203(0xcb)
     def getBatteryStatus(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryStatus")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryStatus')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 250(0xfa)
+    # 250(0xfa)
     def getButtonState(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getButtonState")
+        fail_byte, t_stamp, data = self.writeRead('getButtonState')
         if timestamp:
             return (data, t_stamp)
         return data
 
 
-## END generated functions DL_
+# END generated functions DL_
 
 
 class TSBTSensor(_TSSensor):
     command_dict = _TSSensor.command_dict.copy()
-    command_dict.update(
-        {
-            "getBatteryVoltage": (0xC9, 4, ">f", 0, None, 1),
-            "getBatteryPercentRemaining": (0xCA, 1, ">B", 0, None, 1),
-            "getBatteryStatus": (0xCB, 1, ">B", 0, None, 1),
-            "_setUARTBaudRate": (0xE7, 0, None, 4, ">I", 1),
-            "getUARTBaudRate": (0xE8, 4, ">I", 0, None, 1),
-            "getButtonState": (0xFA, 1, ">B", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        'getBatteryVoltage': (0xc9, 4, '>f', 0, None, 1),
+        'getBatteryPercentRemaining': (0xca, 1, '>B', 0, None, 1),
+        'getBatteryStatus': (0xcb, 1, '>B', 0, None, 1),
+        '_setUARTBaudRate': (0xe7, 0, None, 4, '>I', 1),
+        'getUARTBaudRate': (0xe8, 4, '>I', 0, None, 1),
+        'getButtonState': (0xfa, 1, '>B', 0, None, 1)
+    })
 
-    reverse_command_dict = dict(map(lambda x: [x[1][0], x[0]], command_dict.items()))
+    reverse_command_dict = dict(
+        map(lambda x: [x[1][0], x[0]], command_dict.items()))
 
     _device_types = ["BT", "BT-HH", "MBT"]
 
-    def __new__(
-        cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
         if com_port is None:
             return None
         if com_port:
@@ -3906,86 +3683,80 @@ class TSBTSensor(_TSSensor):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=2.5, writeTimeout=2.5
-            )
+                port_name, baudrate=baudrate, timeout=2.5, writeTimeout=2.5)
             if serial_port is not None:
                 new_inst = super(_TSSensor, cls).__new__(cls)
-                serial_port.write(bytearray((0xF7, 0x56, 0x56)))
+                serial_port.write(bytearray((0xf7, 0x56, 0x56)))
                 time.sleep(0.25)
                 serial_port.flushInput()
-                return _generateSensorClass(
-                    new_inst, serial_port, TSBTSensor._device_types
-                )
-        _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, TSBTSensor._device_types)
+        _print('Error serial port was not made')
 
-    ## 231(0xe7)
+    # 231(0xe7)
     def setUARTBaudRate(self, baud_rate, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("_setUARTBaudRate", baud_rate)
+        fail_byte, t_stamp, data = self.writeRead(
+            '_setUARTBaudRate', baud_rate)
         if not fail_byte:
             self.baudrate = baud_rate
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## generated functions BT_
-    ## 201(0xc9)
+    # generated functions BT_
+    # 201(0xc9)
     def getBatteryVoltage(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryVoltage")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryVoltage')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 202(0xca)
+    # 202(0xca)
     def getBatteryPercentRemaining(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryPercentRemaining")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryPercentRemaining')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 203(0xcb)
+    # 203(0xcb)
     def getBatteryStatus(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getBatteryStatus")
+        fail_byte, t_stamp, data = self.writeRead('getBatteryStatus')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 232(0xe8)
+    # 232(0xe8)
     def getUARTBaudRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUARTBaudRate")
+        fail_byte, t_stamp, data = self.writeRead('getUARTBaudRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 250(0xfa)
+    # 250(0xfa)
     def getButtonState(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getButtonState")
+        fail_byte, t_stamp, data = self.writeRead('getButtonState')
         if timestamp:
             return (data, t_stamp)
         return data
 
 
-## END generated functions BT_
-
+# END generated functions BT_
 
 class TSLXSensor(_TSSensor):
     command_dict = _TSSensor.command_dict.copy()
-    command_dict.update(
-        {
-            "setInterruptType": (0x1D, 0, None, 3, ">BBB", 1),
-            "readInterruptType": (0x1E, 3, ">BBB", 0, None, 1),
-            "getInterruptStatus": (0x1F, 1, ">B", 0, None, 1),
-            "_setUARTBaudRate": (0xE7, 0, None, 4, ">I", 1),
-            "getUARTBaudRate": (0xE8, 4, ">I", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        'setInterruptType': (0x1d, 0, None, 3, '>BBB', 1),
+        'readInterruptType': (0x1e, 3, '>BBB', 0, None, 1),
+        'getInterruptStatus': (0x1f, 1, '>B', 0, None, 1),
+        '_setUARTBaudRate': (0xe7, 0, None, 4, '>I', 1),
+        'getUARTBaudRate': (0xe8, 4, '>I', 0, None, 1)
+    })
 
-    reverse_command_dict = dict(map(lambda x: [x[1][0], x[0]], command_dict.items()))
+    reverse_command_dict = dict(
+        map(lambda x: [x[1][0], x[0]], command_dict.items()))
 
     _device_types = ["LX", "LX-HH"]
 
-    def __new__(
-        cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
         if com_port is None:
             return None
         if com_port:
@@ -4000,80 +3771,74 @@ class TSLXSensor(_TSSensor):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5)
             if serial_port is not None:
                 new_inst = super(_TSSensor, cls).__new__(cls)
-                serial_port.write(bytearray((0xF7, 0x56, 0x56)))
+                serial_port.write(bytearray((0xf7, 0x56, 0x56)))
                 time.sleep(0.01)
                 serial_port.flushInput()
-                return _generateSensorClass(
-                    new_inst, serial_port, TSLXSensor._device_types
-                )
-        _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, TSLXSensor._device_types)
+        _print('Error serial port was not made')
 
-    ## 231(0xe7)
+    # 231(0xe7)
     def setUARTBaudRate(self, baud_rate, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("_setUARTBaudRate", baud_rate)
+        fail_byte, t_stamp, data = self.writeRead(
+            '_setUARTBaudRate', baud_rate)
         if not fail_byte:
             self.baudrate = baud_rate
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## generated functions EM_
-    ##  29(0x1d)
+    # generated functions EM_
+    # 29(0x1d)
     def setInterruptType(self, mode, pin, timestamp=False):
         arg_list = (mode, pin)
-        fail_byte, t_stamp, data = self.writeRead("setInterruptType", arg_list)
+        fail_byte, t_stamp, data = self.writeRead('setInterruptType', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  30(0x1e)
+    # 30(0x1e)
     def readInterruptType(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("readInterruptType")
+        fail_byte, t_stamp, data = self.writeRead('readInterruptType')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  31(0x1f)
+    # 31(0x1f)
     def getInterruptStatus(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getInterruptStatus")
+        fail_byte, t_stamp, data = self.writeRead('getInterruptStatus')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 232(0xe8)
+    # 232(0xe8)
     def getUARTBaudRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUARTBaudRate")
+        fail_byte, t_stamp, data = self.writeRead('getUARTBaudRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
-
-## END generated functions LX_
+# END generated functions LX_
 
 
 class TSNANOSensor(_TSSensor):
     command_dict = _TSSensor.command_dict.copy()
-    command_dict.update(
-        {
-            "setInterruptType": (0x1D, 0, None, 3, ">BBB", 1),
-            "readInterruptType": (0x1E, 3, ">BBB", 0, None, 1),
-            "getInterruptStatus": (0x1F, 1, ">B", 0, None, 1),
-            "_setUARTBaudRate": (0xE7, 0, None, 4, ">I", 1),
-            "getUARTBaudRate": (0xE8, 4, ">I", 0, None, 1),
-        }
-    )
+    command_dict.update({
+        'setInterruptType': (0x1d, 0, None, 3, '>BBB', 1),
+        'readInterruptType': (0x1e, 3, '>BBB', 0, None, 1),
+        'getInterruptStatus': (0x1f, 1, '>B', 0, None, 1),
+        '_setUARTBaudRate': (0xe7, 0, None, 4, '>I', 1),
+        'getUARTBaudRate': (0xe8, 4, '>I', 0, None, 1)
+    })
 
-    reverse_command_dict = dict(map(lambda x: [x[1][0], x[0]], command_dict.items()))
+    reverse_command_dict = dict(
+        map(lambda x: [x[1][0], x[0]], command_dict.items()))
 
     _device_types = ["Nano", "NANO-HH"]
 
-    def __new__(
-        cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR
-    ):
+    def __new__(cls, com_port=None, baudrate=_baudrate, timestamp_mode=TSS_TIMESTAMP_SENSOR):
         if com_port is None:
             return None
         if com_port:
@@ -4088,58 +3853,56 @@ class TSNANOSensor(_TSSensor):
                 baudrate = _baudrate
                 _print("Error baudrate value not allowed. Using default.")
             serial_port = serial.Serial(
-                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5
-            )
+                port_name, baudrate=baudrate, timeout=0.5, writeTimeout=0.5)
             if serial_port is not None:
                 new_inst = super(_TSSensor, cls).__new__(cls)
-                serial_port.write(bytearray((0xF7, 0x56, 0x56)))
+                serial_port.write(bytearray((0xf7, 0x56, 0x56)))
                 time.sleep(0.01)
                 serial_port.flushInput()
-                return _generateSensorClass(
-                    new_inst, serial_port, TSNANOSensor._device_types
-                )
-        _print("Error serial port was not made")
+                return _generateSensorClass(new_inst, serial_port, TSNANOSensor._device_types)
+        _print('Error serial port was not made')
 
-    ## 231(0xe7)
+    # 231(0xe7)
     def setUARTBaudRate(self, baud_rate, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("_setUARTBaudRate", baud_rate)
+        fail_byte, t_stamp, data = self.writeRead(
+            '_setUARTBaudRate', baud_rate)
         if not fail_byte:
             self.baudrate = baud_rate
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ## generated functions EM_
-    ##  29(0x1d)
+    # generated functions EM_
+    # 29(0x1d)
     def setInterruptType(self, mode, pin, timestamp=False):
         arg_list = (mode, pin)
-        fail_byte, t_stamp, data = self.writeRead("setInterruptType", arg_list)
+        fail_byte, t_stamp, data = self.writeRead('setInterruptType', arg_list)
         if timestamp:
             return (not fail_byte, t_stamp)
         return not fail_byte
 
-    ##  30(0x1e)
+    # 30(0x1e)
     def readInterruptType(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("readInterruptType")
+        fail_byte, t_stamp, data = self.writeRead('readInterruptType')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ##  31(0x1f)
+    # 31(0x1f)
     def getInterruptStatus(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getInterruptStatus")
+        fail_byte, t_stamp, data = self.writeRead('getInterruptStatus')
         if timestamp:
             return (data, t_stamp)
         return data
 
-    ## 232(0xe8)
+    # 232(0xe8)
     def getUARTBaudRate(self, timestamp=False):
-        fail_byte, t_stamp, data = self.writeRead("getUARTBaudRate")
+        fail_byte, t_stamp, data = self.writeRead('getUARTBaudRate')
         if timestamp:
             return (data, t_stamp)
         return data
 
+# END generated functions Nano
 
-## END generated functions Nano
 
 global_broadcaster = Broadcaster()

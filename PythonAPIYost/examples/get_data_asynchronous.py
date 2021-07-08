@@ -1,47 +1,47 @@
-## Reading a YEI 3-Space Sensor device's orientation with streaming using
-## Python 2.7, PySerial 2.6, and YEI 3-Space Python API
+# Reading a YEI 3-Space Sensor device's orientation with streaming using
+# Python 2.7, PySerial 2.6, and YEI 3-Space Python API
 
+import time
+import threespace_api as ts_api
 import sys
 
 sys.path.append("..")
-import threespace_api as ts_api
-import time
 
 ################################################################################
 ############### First streaming data over a wireless connection ################
 ################################################################################
 
-## If the COM port is not known or the device type is not known for the 3-Space
-## Sensor device, we must do a search for the devices. We can do this by calling
-## the getComPorts function which returns a lists of COM port information.
-## (both known 3-Space Sensor devices and unknown devices)
-## getComPorts also as a parameter called filter that takes a mask that denotes
-## what type of 3-Space Sensor device can be found. If filter is not used or set
-## to None all connected 3-Space Sensor devices and unknown devices are found.
-## Each COM port information is a list containing
-## (COM port name, friendly name, 3-Space Sensor device type)
-## This example makes use of the filter parameter of getComPorts and just
-## searches for Dongle devices.
+# If the COM port is not known or the device type is not known for the 3-Space
+# Sensor device, we must do a search for the devices. We can do this by calling
+# the getComPorts function which returns a lists of COM port information.
+# (both known 3-Space Sensor devices and unknown devices)
+# getComPorts also as a parameter called filter that takes a mask that denotes
+# what type of 3-Space Sensor device can be found. If filter is not used or set
+# to None all connected 3-Space Sensor devices and unknown devices are found.
+# Each COM port information is a list containing
+# (COM port name, friendly name, 3-Space Sensor device type)
+# This example makes use of the filter parameter of getComPorts and just
+# searches for Dongle devices.
 # device_list = ts_api.getComPorts(filter=ts_api.TSS_FIND_DNG)
 
 
-## Only one 3-Space Sensor device is needed so we are just going to take the
-## first one from the list.
+# Only one 3-Space Sensor device is needed so we are just going to take the
+# first one from the list.
 com_port = "/dev/ttyACM0"
 dng_device = ts_api.TSDongle(com_port=com_port)
 
-## If a connection to the COM port fails, None is returned.
+# If a connection to the COM port fails, None is returned.
 if dng_device is not None:
-    ## Now this assumes that the Wireless device and Dongle device have already
-    ## been paired previously.
+    # Now this assumes that the Wireless device and Dongle device have already
+    # been paired previously.
     print("dng_device", dng_device)
     wl_device = dng_device[0]
     print(wl_device)
 
     if wl_device is not None:
-        ## Setting up the streaming session for getting the tared orientation
-        ## of the Wireless device as a quaternion, the battery percent, and the
-        ## button state
+        # Setting up the streaming session for getting the tared orientation
+        # of the Wireless device as a quaternion, the battery percent, and the
+        # button state
         ## setStreamingTiming(interval, duration, delay) in microseconds
         wl_device.setStreamingTiming(interval=0, duration=100000000, delay=0)
         wl_device.setStreamingSlots(
@@ -50,10 +50,10 @@ if dng_device is not None:
             slot2="getButtonState",
         )
         wl_device.startStreaming()
-        ## We can also record the data
+        # We can also record the data
         wl_device.startRecordingData()
-        start_time = time.perf_counter()
-        while time.perf_counter() - start_time < 5:
+        start_time = time.time()
+        while time.time() - start_time < 5:
             print(wl_device.stream_last_data)
             print("=======================================\n")
 
@@ -61,7 +61,7 @@ if dng_device is not None:
         wl_device.stopStreaming()
         print("stream_data length = {0}".format(len(wl_device.stream_data)))
 
-    ## Now close the port.
+    # Now close the port.
     dng_device.close()
 
 ################################################################################
@@ -105,8 +105,8 @@ for device_port in device_list:
                 if sens is not None:
                     sensor_list.append(sens)
 
-## The YEI 3-Space Python API has a global broadcaster called global_broadcaster
-## which is an instance of Broadcaster
+# The YEI 3-Space Python API has a global broadcaster called global_broadcaster
+# which is an instance of Broadcaster
 ts_api.global_broadcaster.setStreamingTiming(
     interval=0,
     duration=110000000,
@@ -132,6 +132,6 @@ for sensor in sensor_list:
         )
     )
 
-## Now close the ports.
+# Now close the ports.
 for device in all_list:
     device.close()
