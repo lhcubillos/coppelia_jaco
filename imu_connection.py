@@ -5,12 +5,15 @@ from OpenGL.GL import *
 import math
 import copy
 import sys
+
 sys.path.append("./PythonAPIYost/")
 import threespace_api as ts_api
-import geometry_msgs.msg as gm
-import rospy
 
-# import pygame
+# import geometry_msgs.msg as gm
+# import rospy
+
+import pygame
+
 # from pygame.locals import *
 # import lcm
 # from lcmtypes.imus_t import imus_t
@@ -49,9 +52,9 @@ class IMUStream:
 
         # self.lc = lcm.LCM()
         self.period = 1.0 / frequency
-        self.publishers = [rospy.Publisher(
-            "yei_imu/" + str(i + 1), gm.Vector3, queue_size=200) for i in range(8)]
-        rospy.init_node("yei_imu_connection", anonymous=True)
+        # self.publishers = [rospy.Publisher(
+        #     "yei_imu/" + str(i + 1), gm.Vector3, queue_size=200) for i in range(8)]
+        # rospy.init_node("yei_imu_connection", anonymous=True)
         # self.rate = rospy.Rate(frequency)
 
     def connect(self):
@@ -62,11 +65,13 @@ class IMUStream:
             if imu_dev is None:
                 continue
             imu_dev.tareWithCurrentOrientation()
-            imu_dev.setStreamingTiming(
-                interval=0, duration=0xFFFFFFFF, delay=0)
+            imu_dev.setStreamingTiming(interval=0, duration=0xFFFFFFFF, delay=0)
             imu_dev.setStreamingSlots(slot0="getTaredOrientationAsEulerAngles")
-        print("Found {} IMUs connected and started streaming".format(
-            len([1 for imu in self.imu_devices if imu is not None])))
+        print(
+            "Found {} IMUs connected and started streaming".format(
+                len([1 for imu in self.imu_devices if imu is not None])
+            )
+        )
 
     def run(self):
         self.connect()
@@ -77,7 +82,7 @@ class IMUStream:
 
         try:
             t = time.time()
-            while not self.should_stop and not rospy.is_shutdown():
+            while not self.should_stop:
                 t += self.period
 
                 latest_data = []
@@ -92,8 +97,8 @@ class IMUStream:
                         data = [euler[2] * -1, euler[0]]
                         latest_data.append(data)
                         # YPR
-                        msg = gm.Vector3(0, data[1], data[0])
-                        publisher.publish(msg)
+                        # msg = gm.Vector3(0, data[1], data[0])
+                        # publisher.publish(msg)
                 self.latest_data = copy.copy(latest_data)
                 # print(self.latest_data)
                 time.sleep(max(0, t - time.time()))

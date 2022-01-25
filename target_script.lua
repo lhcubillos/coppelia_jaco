@@ -46,13 +46,17 @@ function createPath()
     vel_x = 0.0
     vel_y = sim.getFloatSignal("vel_y")
     vel_z = sim.getFloatSignal("vel_z")
-    if vel_x == 0.0 and vel_y == 0.0 and vel_z == 0.0 then
-        return
-    end
+    
     -- Set posAlongPath to 0
     local curr_pos = Vector3(sim.getObjectPosition(objectToFollowPath, -1))
     -- Set x position zero
     curr_pos[1] = 0.0
+    if vel_x == 0.0 and vel_y == 0.0 and vel_z == 0.0 then
+        velocity = 0.0
+        vel_norm1 = 0.0
+        initial_point = curr_pos:copy()
+        return
+    end
     local vel = Vector3({vel_x,vel_y,vel_z})
     velocity = vel:norm()
     vel_norm1 = vel / velocity

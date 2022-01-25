@@ -8,9 +8,12 @@ import threading
 from pynput.keyboard import Key, Listener
 from imu_processing import compute_velocity
 
-import lcm
-from lcmtypes.imus_t import imus_t
-from lcmtypes.euler_t import euler_t
+# import lcm
+# from lcmtypes.imus_t import imus_t
+# from lcmtypes.euler_t import euler_t
+from zerocm import ZCM
+from zcmtypes.imus_t import imus_t
+from zcmtypes.euler_t import euler_t
 
 
 class JacoArm:
@@ -28,51 +31,18 @@ class Simulation:
         self.curr_vel = [0.0, 0.0, 0.0]
         self.new_vel = [0.0, 0.0, 0.0]
         self.should_stop = False
-        self.lc = lcm.LCM()
+        self.zcmL = ZCM()
         self.imu_data = [None for _ in range(4)]
-        self.lcm_thread = threading.Thread(target=self.lcm_loop, daemon=True)
 
-        # # IMU streamer
-        # self.imu_streamer = IMUStream()
-        # self.imu_thread = threading.Thread(target=self.imu_streamer.run, daemon=True)
-
-    def lcm_loop(self):
-        while True:
-            self.lc.handle()
-
-    def imu_t_callback(self, channel, data):
-        imu_msg = imus_t.decode(data)
+    def imu_t_callback(self, channel, imu_msg):
         self.imu_data = [
             [v.pitch, v.roll] if v.available else None for v in imu_msg.imu_values
         ]
 
-    def capture_keyboard(self):
-        with Listener(on_press=self.on_press, on_release=self.on_release) as listener:
-            listener.join()
-        self.should_stop = True
-
-    def on_press(self, key):
-        velocity = [0.0, 0.0, 0.0]
-        if key == Key.left:
-            velocity[1] = -0.1
-        elif key == Key.right:
-            velocity[1] = 0.1
-        elif key == Key.down:
-            velocity[2] = -0.1
-        elif key == Key.up:
-            velocity[2] = 0.1
-
-        if velocity != self.curr_vel:
-            self.new_vel = velocity
-
-    def on_release(self, key):
-        if key == Key.left or key == Key.right or key == Key.down or key == Key.up:
-            self.new_vel = [0.0, 0.0, 0.0]
-
     def start(self):
         # LCM
-        self.lc.subscribe("IMU", self.imu_t_callback)
-        self.lcm_thread.start()
+        self.zcmL.subscribe("IMU", imus_t, self.imu_t_callback)
+        self.zcmL.start()
         # IMU stream
 
         # pygame.init()
@@ -83,12 +53,10 @@ class Simulation:
 
         # Get arm from simulation
         self.jaco = JacoArm(Jaco(), None)
-        # self.keys_thread.start()
 
     def stop(self):
-        # self.pr.stop()
+        self.pr.stop()
         # self.pr.shutdown()
-        pass
 
     def run(self):
         try:
@@ -99,15 +67,9 @@ class Simulation:
             while not self.should_stop:
                 try:
                     # print(self.imu_data)
-                    # FIXME: remove this
-                    self.new_vel = compute_velocity(self.imu_data)
-                    # if self.imu_data[0] is not None:
-                    #     if self.imu_data[0][1] > -0.02 and self.imu_data[0][1] < 0.02:
-                    #         self.new_vel = [0.0, 0.0, 0.0]
-                    #     elif self.imu_data[0][1] >= 0.01:
-                    #         self.new_vel = [0.0, 0.1, 0.0]
-                    #     else:
-                    #         self.new_vel = [0, -0.1, 0]
+                    # TODO: only using first IMU for now
+                    if self.imu_data[0] is not None:
+                        self.new_vel = compute_velocity(self.imu_data)
                     if (
                         np.linalg.norm(np.array(self.curr_vel) - np.array(self.new_vel))
                         > 0.001
@@ -120,9 +82,9 @@ class Simulation:
                     self.pr.step()
                 except KeyboardInterrupt:
                     self.should_stop = True
-                    # self.imu_streamer.should_stop = True
 
         finally:
+            self.zcmL.stop()
             self.stop()
 
 
