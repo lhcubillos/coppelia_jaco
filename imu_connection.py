@@ -13,11 +13,14 @@ import threespace_api as ts_api
 # import rospy
 
 import pygame
+from pygame.locals import *
 
-# from pygame.locals import *
 # import lcm
 # from lcmtypes.imus_t import imus_t
 # from lcmtypes.euler_t import euler_t
+from zerocm import ZCM
+from zcmtypes.imus_t import imus_t
+from zcmtypes.euler_t import euler_t
 
 ################################################################################
 ############### First streaming data over a wireless connection ################
@@ -50,12 +53,8 @@ class IMUStream:
         self.latest_data = [None for _ in range(8)]
         self.should_stop = False
 
-        # self.lc = lcm.LCM()
+        self.zcmL = ZCM()
         self.period = 1.0 / frequency
-        # self.publishers = [rospy.Publisher(
-        #     "yei_imu/" + str(i + 1), gm.Vector3, queue_size=200) for i in range(8)]
-        # rospy.init_node("yei_imu_connection", anonymous=True)
-        # self.rate = rospy.Rate(frequency)
 
     def connect(self):
         self.dng = ts_api.TSDongle(com_port=PORT)
@@ -66,7 +65,8 @@ class IMUStream:
                 continue
             imu_dev.tareWithCurrentOrientation()
             imu_dev.setStreamingTiming(interval=0, duration=0xFFFFFFFF, delay=0)
-            imu_dev.setStreamingSlots(slot0="getTaredOrientationAsEulerAngles")
+            # imu_dev.setStreamingSlots(slot0="getTaredOrientationAsEulerAngles")
+            imu_dev.setStreamingSlots(slot0="getTaredOrientationAsQuaternion")
         print(
             "Found {} IMUs connected and started streaming".format(
                 len([1 for imu in self.imu_devices if imu is not None])
@@ -86,22 +86,29 @@ class IMUStream:
                 t += self.period
 
                 latest_data = []
-                for imu_dev, publisher in zip(self.imu_devices, self.publishers):
-                    # euler_msg = euler_t()
+                msg = imus_t()
+                msg.utime = int(time.time() * 1000000)
+                msg.imu_values = []
+                for imu_dev in self.imu_devices:
+                    euler_msg = euler_t()
                     if imu_dev is None or imu_dev.stream_last_data is None:
                         latest_data.append(None)
-                        # euler_msg.available = False
+                        euler_msg.available = False
                     else:
                         euler = imu_dev.stream_last_data[1]
                         # This his how they did it in the Matlab program
                         data = [euler[2] * -1, euler[0]]
                         latest_data.append(data)
                         # YPR
-                        # msg = gm.Vector3(0, data[1], data[0])
-                        # publisher.publish(msg)
+                        euler_msg.available = True
+                        euler_msg.pitch = data[1]
+                        euler_msg.roll = data[0]
+                    msg.imu_values.append(euler_msg)
                 self.latest_data = copy.copy(latest_data)
-                # print(self.latest_data)
+                self.zcmL.publish("IMU", msg)
                 time.sleep(max(0, t - time.time()))
+        except KeyboardInterrupt:
+            pass
         finally:
             for imu_dev in self.imu_devices:
                 if imu_dev is not None:
@@ -138,6 +145,8 @@ class IMUStream:
                     self.draw(w, nx, ny, nz)
                     pygame.display.flip()
                     frames += 1
+        except KeyboardInterrupt:
+            pass
         finally:
             for imu_dev in self.imu_devices:
                 if imu_dev is not None:
@@ -180,7 +189,7 @@ class IMUStream:
         rot = R.from_quat([nx, ny, nz, w])
 
         # [yaw, pitch, roll] = self.quat_to_ypr([w, nx, ny, nz])
-        [yaw, pitch, roll] = rot.as_euler("zyx", degrees=True)
+        [roll, yaw, pitch] = rot.as_euler("zyx", degrees=True)
         self.drawText(
             (-2.6, -1.8, 2), "Yaw: %f, Pitch: %f, Roll: %f" % (yaw, pitch, roll), 16
         )
@@ -257,5 +266,5 @@ class IMUStream:
 
 
 if __name__ == "__main__":
-    imu_stream = IMUStream(10)
+    imu_stream = IMUStream(100)
     imu_stream.run()
