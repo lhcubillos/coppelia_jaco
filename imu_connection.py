@@ -42,7 +42,7 @@ from zcmtypes.euler_t import euler_t
 
 # Only one 3-Space Sensor device is needed so we are just going to take the
 # first one from the list.
-PORT = "/dev/ttyACM0"
+PORT = "/dev/ttyACM1"
 
 
 class IMUStream:
@@ -65,8 +65,8 @@ class IMUStream:
                 continue
             imu_dev.tareWithCurrentOrientation()
             imu_dev.setStreamingTiming(interval=0, duration=0xFFFFFFFF, delay=0)
-            # imu_dev.setStreamingSlots(slot0="getTaredOrientationAsEulerAngles")
-            imu_dev.setStreamingSlots(slot0="getTaredOrientationAsQuaternion")
+            imu_dev.setStreamingSlots(slot0="getTaredOrientationAsEulerAngles")
+            # imu_dev.setStreamingSlots(slot0="getTaredOrientationAsQuaternion")
         print(
             "Found {} IMUs connected and started streaming".format(
                 len([1 for imu in self.imu_devices if imu is not None])
