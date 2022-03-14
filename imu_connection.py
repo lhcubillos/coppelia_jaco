@@ -42,7 +42,7 @@ from zcmtypes.euler_t import euler_t
 
 # Only one 3-Space Sensor device is needed so we are just going to take the
 # first one from the list.
-PORT = "/dev/ttyACM1"
+PORT = "/dev/ttyACM0"
 
 
 class IMUStream:

@@ -12,7 +12,7 @@ zcmL = ZCM()
 
 def on_press(key):
     #tap for a noisy value, hold for a continuous noisy input
-    std_dev_noise = math.pu / 32
+    std_dev_noise = math.pi / 32
     global imu_values, zcmL
     imu_values = [0.0, 0.0]
     key_pressed = False
