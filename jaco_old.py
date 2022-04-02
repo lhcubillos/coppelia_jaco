@@ -6,7 +6,7 @@ import numpy as np
 import time
 import threading
 from pynput.keyboard import Key, Listener
-from imu_processing import compute_velocity
+from imu_processing_old import compute_velocity
 
 # import lcm
 # from lcmtypes.imus_t import imus_t
@@ -32,15 +32,12 @@ class Simulation:
         self.new_vel = [0.0, 0.0, 0.0]
         self.should_stop = False
         self.zcmL = ZCM()
-        self.imu_data = None
+        self.imu_data = [None for _ in range(4)]
 
     def imu_t_callback(self, channel, imu_msg):
-        self.imu_data = np.array([
-            imu_msg.imu_values[0].pitch,imu_msg.imu_values[0].roll,\
-            imu_msg.imu_values[1].pitch,imu_msg.imu_values[1].roll,\
-            imu_msg.imu_values[2].pitch,imu_msg.imu_values[2].roll,\
-            imu_msg.imu_values[3].pitch,imu_msg.imu_values[3].roll
-        ]).reshape(1,-1)
+        self.imu_data = [
+            [v.pitch, v.roll] if v.available else None for v in imu_msg.imu_values
+        ]
 
     def start(self):
         # ZCM
@@ -70,8 +67,8 @@ class Simulation:
             while not self.should_stop:
                 try:
                     # print(self.imu_data)
-                    # TODO: requires all four imus for now
-                    if self.imu_data is not None:
+                    # TODO: only using first IMU for now
+                    if self.imu_data[0] is not None:
                         self.new_vel = compute_velocity(self.imu_data)
                     if (
                         np.linalg.norm(np.array(self.curr_vel) - np.array(self.new_vel))

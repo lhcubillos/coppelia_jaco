@@ -23,7 +23,7 @@ class JacoArm:
 
 
 class Simulation:
-    def __init__(self, scene_name="scene_jaco.ttt"):
+    def __init__(self, scene_name="scene_jaco_circle.ttt"):
         self.pr = PyRep()
         self.jaco = None
 
@@ -32,15 +32,12 @@ class Simulation:
         self.new_vel = [0.0, 0.0, 0.0]
         self.should_stop = False
         self.zcmL = ZCM()
-        self.imu_data = None
+        self.imu_data = [None for _ in range(4)]
 
     def imu_t_callback(self, channel, imu_msg):
-        self.imu_data = np.array([
-            imu_msg.imu_values[0].pitch,imu_msg.imu_values[0].roll,\
-            imu_msg.imu_values[1].pitch,imu_msg.imu_values[1].roll,\
-            imu_msg.imu_values[2].pitch,imu_msg.imu_values[2].roll,\
-            imu_msg.imu_values[3].pitch,imu_msg.imu_values[3].roll
-        ]).reshape(1,-1)
+        self.imu_data = [
+            [v.pitch, v.roll] if v.available else None for v in imu_msg.imu_values
+        ]
 
     def start(self):
         # ZCM
@@ -70,16 +67,16 @@ class Simulation:
             while not self.should_stop:
                 try:
                     # print(self.imu_data)
-                    # TODO: requires all four imus for now
-                    if self.imu_data is not None:
+                    # TODO: only using first IMU for now
+                    if self.imu_data[0] is not None:
                         self.new_vel = compute_velocity(self.imu_data)
                     if (
                         np.linalg.norm(np.array(self.curr_vel) - np.array(self.new_vel))
                         > 0.001
                     ):
                         self.curr_vel = self.new_vel
-                        sim.simSetFloatSignal("vel_x", self.curr_vel[0])
-                        sim.simSetFloatSignal("vel_y", self.curr_vel[1])
+                        sim.simSetFloatSignal("vel_y", self.curr_vel[0])
+                        sim.simSetFloatSignal("vel_x", self.curr_vel[1])
                         sim.simSetFloatSignal("vel_z", self.curr_vel[2])
                         self.pr.script_call("createPath@Jaco_target", 1)
                     self.pr.step()
