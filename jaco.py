@@ -1,12 +1,11 @@
-from pyrep import PyRep
-from pyrep.backend import sim, utils
-from pyrep.robots.arms.jaco import Jaco
-from pyrep.robots.end_effectors.jaco_gripper import JacoGripper
 import numpy as np
 import time
 import threading
 from pynput.keyboard import Key, Listener
 from imu_processing import compute_velocity
+import sys
+import pickle as pk
+import signal
 
 # import lcm
 # from lcmtypes.imus_t import imus_t
@@ -15,6 +14,10 @@ from zerocm import ZCM
 from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
 
+sys.path.insert(1,"/home/xander/coppelia/coppelia_jaco/CoppeliaSim_Edu_V4_3_0_Ubuntu20_04/programming/zmqRemoteApi/clients/python")
+# Make this your path to CoppeliaSim/programming/zmqRemoteApi/clients/python
+
+from zmqRemoteApi import RemoteAPIClient
 
 class JacoArm:
     def __init__(self, arm, gripper):
@@ -23,16 +26,33 @@ class JacoArm:
 
 
 class Simulation:
-    def __init__(self, scene_name="scene_jaco.ttt"):
-        self.pr = PyRep()
-        self.jaco = None
-
-        self.scene_name = scene_name
+    def __init__(self, pca_filename):
+        self.client = RemoteAPIClient()
+        self.client.setStepping(True)
+        self.sim = self.client.getObject('sim')
+        self.paused = None
+        self.jaco_target = self.sim.getScriptHandle(1,'Jaco_target')
         self.curr_vel = [0.0, 0.0, 0.0]
         self.new_vel = [0.0, 0.0, 0.0]
         self.should_stop = False
         self.zcmL = ZCM()
         self.imu_data = None
+        
+        self.last_time = None
+        
+        self.pca_f = pca_filename
+        f = open(self.pca_f,"rb")
+        
+        pca_load = pk.load(f)
+        self.pca = pca_load[0]
+        self.usr_cust = pca_load[1]
+        
+        if self.usr_cust is None:
+            self.usr_cust = np.identity(2)
+        self.pca_cust = np.matmul(self.pca,self.usr_cust)
+        print(self.pca)
+        print(self.usr_cust)
+        f.close() 
 
     def imu_t_callback(self, channel, imu_msg):
         self.imu_data = np.array([
@@ -44,53 +64,58 @@ class Simulation:
 
     def start(self):
         # ZCM
+        self.sim.startSimulation()
+        
         self.zcmL.subscribe("IMU", imus_t, self.imu_t_callback)
         self.zcmL.start()
-        # IMU stream
-
-        # pygame.init()
-        # Launch CS
-        self.pr.launch(self.scene_name)
-        # Start simulation
-        self.pr.start()
-
-        # Get arm from simulation
-        self.jaco = JacoArm(Jaco(), None)
+        
 
     def stop(self):
-        self.pr.stop()
-        # self.pr.shutdown()
+        self.zcmL.stop()
+        self.sim.stopSimulation()
 
     def run(self):
         try:
             self.start()
-            start = time.time()
-            while time.time() - start < 3:
-                self.pr.step()
+            
             while not self.should_stop:
                 try:
                     # print(self.imu_data)
-                    # TODO: requires all four imus for now
+                    start_time = time.time()
+                    active = False
                     if self.imu_data is not None:
-                        self.new_vel = compute_velocity(self.imu_data)
+                        self.new_vel = compute_velocity(self.imu_data,self.pca_cust)
                     if (
                         np.linalg.norm(np.array(self.curr_vel) - np.array(self.new_vel))
                         > 0.001
-                    ):
+                    ) and (not self.should_stop):
                         self.curr_vel = self.new_vel
-                        sim.simSetFloatSignal("vel_x", self.curr_vel[0])
-                        sim.simSetFloatSignal("vel_y", self.curr_vel[1])
-                        sim.simSetFloatSignal("vel_z", self.curr_vel[2])
-                        self.pr.script_call("createPath@Jaco_target", 1)
-                    self.pr.step()
+                        
+                        velocity_signal = self.sim.packFloatTable(self.new_vel)
+                        
+                        self.sim.setStringSignal('velocity',velocity_signal)
+                        
+                        active = True
+                        #self.sim.setFloatSignal("vel_x", self.curr_vel[0])
+                        #self.sim.setFloatSignal("vel_y", self.curr_vel[1])
+                        #self.sim.setFloatSignal("vel_z", self.curr_vel[2])
+                        #self.sim.callScriptFunction("createPath@/Jaco_target", self.jaco_target)
+
+                    self.client.step()
+                    
+                    #if active:
+                        #print(time.time()-start_time)
                 except KeyboardInterrupt:
+                    self.client = RemoteAPIClient()
+                    self.sim = self.client.getObject('sim')
                     self.should_stop = True
+                    
 
         finally:
-            self.zcmL.stop()
             self.stop()
 
 
 if __name__ == "__main__":
-    simul = Simulation()
+    args = sys.argv
+    simul = Simulation(args[1])
     simul.run()
