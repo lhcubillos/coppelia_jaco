@@ -4,16 +4,29 @@ import threading
 from pynput.keyboard import Key, Listener
 from imu_processing import compute_velocity
 
-# import lcm
-# from lcmtypes.imus_t import imus_t
-# from lcmtypes.euler_t import euler_t
 from zerocm import ZCM
 from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
+import sys
+import pickle as pk
 
+###########################################################################
+# This script is a simple test for the PCA system, and should be kept
+# identical to the processing executed in jaco.py. Takes a .pkl filename as input,
+# and simply outputs calculated velocities from ZCM IMU data to the terminal as a vector.
+###########################################################################
 
 class PCATest:
-    def __init__(self):
+    def __init__(self,filename):
+        self.filename = filename
+        f = open(filename,"rb")
+        pca_load = pk.load(f)
+        self.pca = pca_load[0]
+        self.cust = pca_load[1]
+        if self.cust is None:
+            self.cust = np.identity(2)*1
+        f.close
+        self.pca_cust = np.matmul(self.pca,self.cust)
         self.curr_vel = [0.0, 0.0, 0.0]
         self.new_vel = [0.0, 0.0, 0.0]
         self.should_stop = False
@@ -42,8 +55,9 @@ class PCATest:
                     # print(self.imu_data)
                     # TODO: requires all four imus for now
                     if self.imu_data is not None:
-                        self.new_vel = compute_velocity(self.imu_data)
-                        print(str(self.new_vel)+"                          ",end="\r")
+                        self.new_vel = compute_velocity(self.imu_data,self.pca_cust)
+                        total_vel = np.sqrt(np.power(self.new_vel[0],2) + np.power(self.new_vel[1],2) + np.power(self.new_vel[2],2))
+                        print(str(self.new_vel)+str(total_vel)+"        ",end="\r")
                     
                 except KeyboardInterrupt:
                     self.should_stop = True
@@ -53,5 +67,6 @@ class PCATest:
 
 
 if __name__ == "__main__":
-    simul = PCATest()
+    args = sys.argv
+    simul = PCATest(args[1])
     simul.run()

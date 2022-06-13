@@ -8,6 +8,12 @@ import math
 imu_values = [0.0, 0.0]
 zcmL = ZCM()
 
+###########################################################################
+# This script contains the functions used for generating fake IMU inputs on
+# the ZCM channel with keyboard inputs, for debugging purposes.
+# Use arrow keys to generate single-IMU inputs along pitch and roll,
+# press the S key to send a zero pitch/roll input (i.e. "stop").
+###########################################################################
 
 def on_press(key):
     global imu_values, zcmL

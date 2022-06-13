@@ -9,6 +9,11 @@ import numpy as np
 imu_values = [0.0, 0.0]
 zcmL = ZCM()
 
+###########################################################################
+# This script is exactly the same as keyboard_control.py, but applies
+# Gaussian noise to the inputs to test the system response to constantly-
+# changing inputs. Keys can be held for continuously-varying IMU input.
+###########################################################################
 
 def on_press(key):
     #tap for a noisy value, hold for a continuous noisy input

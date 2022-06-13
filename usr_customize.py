@@ -14,6 +14,20 @@ from zcmtypes.euler_t import euler_t
 from collections import deque
 from imu_processing import compute_velocity
 
+
+###########################################################################
+# This script is used to run the user customization UI and processing.
+# Takes a .pkl filename as input, outputs the customized PCA model as 
+# <filename>_cust.pkl. Can adjust the sensitivity for each principle axis,
+# reverse the directions of the axes, or switch the order of the axes.
+# Has a liveplot display that allows for live feedback. Only saves a new file if
+# "Accept" is clicked, otherwise discards changes on closing. Can load existing
+# customized files and will identify existing customizations.
+#
+# TODO: Full commentary on this script
+###########################################################################
+
+
 class LivePlotCust:
     FREQUENCY = 30
 
@@ -95,6 +109,10 @@ class LivePlotCust:
         
     def press4(self):
         self.accept = True
+        out_f = open(self.filename[:-4]+"_cust.pkl","wb")
+        pk.dump([self.pca,self.cust],out_f)
+        print("Saved user customizations to "+self.filename[:-4]+"_cust.pkl")
+        out_f.close()
         self.window.destroy()
     
     def press5(self):
@@ -147,17 +165,17 @@ class LivePlotCust:
         self.zcm.subscribe(self.channel, imus_t, self.handle_messages)
 
     def handle_messages(self, channel, msg):
-        sense1 = self.slider1.get()
-        sense2 = self.slider2.get()
+        sense1 = float(self.slider1.get())
+        sense2 = float(self.slider2.get())
         
-        self.cust = np.array([[sense1,0],[0,sense2]])
+        self.cust = np.array([[sense1,0.0],[0.0,sense2]])
         
         if self.reverse:
-            self.cust = np.matmul(self.cust,np.array([[0,1],[1,0]]))
+            self.cust = np.matmul(self.cust,np.array([[0.0,1.0],[1.0,0.0]]))
         if self.flip1:
-            self.cust = np.matmul(self.cust,np.array([[-1,0],[0,1]]))
+            self.cust = np.matmul(self.cust,np.array([[-1.0,0.0],[0.0,1.0]]))
         if self.flip2:
-            self.cust = np.matmul(self.cust,np.array([[1,0],[0,-1]]))
+            self.cust = np.matmul(self.cust,np.array([[1.0,0.0],[0.0,-1.0]]))
         
         self.pca_cust = np.matmul(self.pca,self.cust)
         if self.last_msg_timestamp is not None:
@@ -180,7 +198,7 @@ class LivePlotCust:
     def draw_plot(self):
         
         self.canvas.draw()
-        self.canvas.flush_events()
+        #self.canvas.flush_events()
         self.window.after(LivePlotCust.FREQUENCY,self.draw_plot)
     
     def run(self):
@@ -193,10 +211,7 @@ class LivePlotCust:
             pass
         self.zcm.stop()
         if self.accept:
-            out_f = open(self.filename[:-4]+"_cust.pkl","wb")
-            pk.dump([self.pca,self.cust],out_f)
-            #print([self.pca,self.cust])
-            out_f.close()
+            pass
         sys.exit()
 
 

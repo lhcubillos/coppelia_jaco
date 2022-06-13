@@ -6,18 +6,20 @@ import math
 import copy
 import sys
 
+###########################################################################
+# This script takes inputs from the IMU device and broadcasts
+# them over ZCM. It is automatically run and shut down by launch_jaco.py.
+# Make sure to close it properly; from the commandline this is done by
+# giving a sigint. If shut down incorrectly, mutex issues can arise; these
+# may require a system restart to clear.
+###########################################################################
+
 sys.path.append("./PythonAPIYost/")
 import threespace_api as ts_api
-
-# import geometry_msgs.msg as gm
-# import rospy
 
 import pygame
 from pygame.locals import *
 
-# import lcm
-# from lcmtypes.imus_t import imus_t
-# from lcmtypes.euler_t import euler_t
 from zerocm import ZCM
 from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
@@ -42,6 +44,8 @@ from zcmtypes.euler_t import euler_t
 
 # Only one 3-Space Sensor device is needed so we are just going to take the
 # first one from the list.
+
+# Make sure to set the port below to the IMU USB device
 PORT = "/dev/ttyACM0"
 
 

@@ -17,8 +17,21 @@ from zcmtypes.euler_t import euler_t
 from collections import deque
 from imu_processing import compute_velocity
 
+###########################################################################
+# This script contains the functions used to run the launcher. Simply run
+# this script from a commandline to start the launcher. Automatically starts
+# and safely closes imu_connection.py on launching (make sure to use the 
+# "Close Launcher" button and not the red X in the corner to avoid mutex issues).
+# Can launch calibration, customization, and jaco.py (along with CS) from this launcher.
+# All other scripts are contained within subprocesses that are safely killed
+# using the "Close Launcher" button. Will only launch one instance of CS;
+# if one is already open within the launcher, will not open another.
+# More buttons can be added as needed for other experiments/scenes/etc.
+###########################################################################
+
 class JacoUI:
     def __init__(self):
+        # Initialize subprocesses and UI
         self.process = subprocess.Popen(['python','imu_connection.py'])
         self.coppelia = None
         self.custom = None
@@ -31,6 +44,9 @@ class JacoUI:
         self.button4 = None
         
     def press1(self):
+        # Ask for filename for new .calib and .pkl files
+        # Then, launches the calibration routine
+        # Automatically launches the customizer when finished
         filename = tk.filedialog.askopenfilename(initialdir = ".",
                                           title = "Choose output filename",
                                           filetypes = (("user customization files",
@@ -40,6 +56,8 @@ class JacoUI:
         self.calib = subprocess.Popen(['python','imu_calibrate.py',filename])
         
     def press2(self):
+        # Ask for filename for existing .pkl file
+        # Then, launches the customization routine
         filename = tk.filedialog.askopenfilename(initialdir = ".",
                                           title = "Choose customization file",
                                           filetypes = (("user customization files",
@@ -49,6 +67,8 @@ class JacoUI:
         self.custom = subprocess.Popen(['python','usr_customize.py',filename])
         
     def press3(self):
+        # Check if CS is running in launcher; if not, open it.
+        # Check if jaco.py is running in launcher; if not, start it. If so, kill and restart it.
         if self.coppelia is None:
             self.coppelia = subprocess.Popen(['/home/xander/coppelia/coppelia_jaco/CoppeliaSim_Edu_V4_3_0_Ubuntu20_04/coppeliaSim','/home/xander/coppelia/coppelia_jaco/coppelia_jaco/scene_jaco_circle.ttt'])
         if self.jaco_p is None:
@@ -71,9 +91,11 @@ class JacoUI:
             
         
     def press4(self):
+        # Kill the UI window, allowing subprocesses to be safely closed
         self.window.destroy()
         
     def init_process(self):
+        # Build the UI
         self.window = tk.Tk()
         self.window.title('JACO Simulator Launcher')
         self.window.geometry('500x500')
@@ -89,9 +111,11 @@ class JacoUI:
     def run(self):
         self.init_process()
         try:
+            # Run the tkinter logic for the UI window
             self.window.mainloop()
         except KeyboardInterrupt:
             pass
+        # When window terminates, safely close every subprocess and exit
         if self.calib is not None:
             self.calib.terminate()
         if self.custom is not None:

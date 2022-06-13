@@ -12,37 +12,54 @@ from zcmtypes.euler_t import euler_t
 
 from collections import deque
 
+###########################################################################
+# This script contains the functions used to calibrate a new PCA model from
+# IMU inputs. Takes a filename as input and outputs .calib and .pkl files,
+# containing the calibration data and the PCA model respectively.
+# Automatically launches the customizer when finished.
+###########################################################################
+
 class CalibrateImu:
+    # Frequency for collecting IMU data
     FREQUENCY = 30
     def __init__(self, channel,):
+        # takes input argument as filename, defaults to "test" if no argument given
         self.filename = "test.pkl"
-        self.first_time = None
+        
+        # initialize UI elements
         self.window = None
         self.text = None
         self.button = None
         self.button2 = None
+        
+        # initialize runtime parameters
+        self.first_time = None        
         self.running = False
         self.start_time = None
         self.stop_time = 60.0
         self.last_msg_timestamp = None
         self.frequency = CalibrateImu.FREQUENCY
         self.f = None
-        # ZCM
+
+        # initialize ZCM
         self.zcm = ZCM("")
         self.channel = channel
         self.should_stop = False
         
     def parseText(self,event):
+        # parse UI text input
         self.runCalib()
         return 'break'
         
     def runCalib(self):
+        # upon clicking the calibrate button, disables UI
         self.button["state"] = "disabled"
         self.text["state"] = "disabled"
         textParse = float(self.text.get("0.0","end").strip())
         self.stop_time = textParse
         self.start_time = time.time()
         self.running = True
+        # collect UI data and save it to filename.calib
         try:
             while not self.should_stop:
                 if (time.time() - self.start_time) >= self.stop_time:
@@ -52,7 +69,10 @@ class CalibrateImu:
         self.zcm.stop()
         self.f.write("\n")
         self.f.close()
-        data = np.genfromtxt(filename[:-4],delimiter=",")
+        
+        # after data collection, process data via PCA to obtain first two principle components
+        # then, build the PCA transformation matrix, normalize/center them, and save to filename.pkl
+        data = np.genfromtxt(filename[:-4]+".calib",delimiter=",")
         data_pca = PCA(n_components=2)
         data_pca.fit(data)
         pca_transform=data_pca.transform(np.identity(8))
@@ -66,18 +86,16 @@ class CalibrateImu:
         pca_dump = [pca_normalized, None]
         f = open(filename,"wb")
         pk.dump(pca_dump, f)
-        
         f.close
-        #self.should_stop = False
-        #self.running = False
-        #self.button["state"] = "normal"
-        #self.text["state"] = "normal"
+        
+        # finally, close the calibration window and launch the customizer automatically on filename.pkl
         self.window.destroy()
         print("Calibration done, opening customizer")
         subprocess.Popen(['python','usr_customize.py',self.filename])
         sys.exit()
 
     def cancelCalib(self):
+        # if cancel is clicked, either stop running or close the window without running
         if not self.running:
             self.window.destroy()
         else:
@@ -86,7 +104,9 @@ class CalibrateImu:
     def init_process(self,filename):
     	# Open file to save to
         self.filename = filename
-        self.f = open(self.filename[:-4],'w')
+        self.f = open(self.filename[:-4]+".calib",'w')
+        
+        # Build UI
         self.window = tk.Tk()
         self.window.title('PCA Calibration')
         self.label = tk.Label(self.window,text="Calibration Duration (Default 60.0 seconds)")
@@ -104,6 +124,7 @@ class CalibrateImu:
         self.zcm.subscribe(self.channel, imus_t, self.handle_messages)
 
     def handle_messages(self, channel, msg):
+        # ZCM handler, saves every IMU input during calibration
         if self.last_msg_timestamp is not None:
             elapsed = time.time() - self.last_msg_timestamp
             if elapsed < 1 / self.frequency:
@@ -130,6 +151,7 @@ class CalibrateImu:
         
 
 if __name__ == "__main__":
+    # Filename is recieved as first argument
     filename = sys.argv[1]
     print(filename)
     calibrate = CalibrateImu("IMU")

@@ -3,6 +3,17 @@ import sys
 print(sys.path)
 sys.path.insert(1,"/home/xander/coppelia/coppelia_jaco/CoppeliaSim_Edu_V4_3_0_Ubuntu20_04/programming/zmqRemoteApi/clients/python")
 from zmqRemoteApi import RemoteAPIClient
+
+
+###########################################################################
+# Simple script to confirm that ZMQ is working correctly.
+# IMPORTANT: Make the above your path to:
+# CoppeliaSim/programming/zmqRemoteApi/clients/python
+# If you do not, it will fail to import zmq for hooking CoppeliaSim!
+# Can use the Viewer or Edu. Same filepath format as in jaco.py.
+###########################################################################
+
+
 client = RemoteAPIClient()
 sim = client.getObject('sim')
 client.setStepping(True)

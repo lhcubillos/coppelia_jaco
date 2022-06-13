@@ -9,6 +9,12 @@ from zcmtypes.euler_t import euler_t
 
 from collections import deque
 
+###########################################################################
+# This script contains a simple visualizer of the IMU input; does not use
+# imu_processing.py, as it does not calculate velocities. Useful for
+# identifying issues with the IMU inputs. Only shows one input at a time,
+# adjust the index of imu_values in line 61 to select which one is shown.
+###########################################################################
 
 class LivePlot:
     FREQUENCY = 30
@@ -51,7 +57,7 @@ class LivePlot:
         self.last_msg_timestamp = time.time()
         if self.first_time is None:
             self.first_time = msg.utime
-        # FIXME: for now, only plotting first IMU
+        # Only plots a single IMU right now
         if msg.imu_values[0] is not None:
             self.x.append((msg.utime - self.first_time) / 1000000)
             imu_val = msg.imu_values[0]
