@@ -32,7 +32,7 @@ from imu_processing import compute_velocity
 class JacoUI:
     def __init__(self):
         # Initialize subprocesses and UI
-        self.process = subprocess.Popen(['python','imu_connection.py'])
+        self.process = subprocess.Popen(['python3','imu_connection.py', sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0"])
         self.coppelia = None
         self.custom = None
         self.calib = None
@@ -47,13 +47,13 @@ class JacoUI:
         # Ask for filename for new .calib and .pkl files
         # Then, launches the calibration routine
         # Automatically launches the customizer when finished
-        filename = tk.filedialog.askopenfilename(initialdir = ".",
+        filename = tk.filedialog.asksaveasfilename(initialdir = ".",
                                           title = "Choose output filename",
                                           filetypes = (("user customization files",
                                                         "*.pkl*"),
                                                        ("all files",
                                                         "*.*")))
-        self.calib = subprocess.Popen(['python','imu_calibrate.py',filename])
+        self.calib = subprocess.Popen(['python3','imu_calibrate.py',filename])
         
     def press2(self):
         # Ask for filename for existing .pkl file
@@ -64,13 +64,13 @@ class JacoUI:
                                                         "*.pkl*"),
                                                        ("all files",
                                                         "*.*")))
-        self.custom = subprocess.Popen(['python','usr_customize.py',filename])
+        self.custom = subprocess.Popen(['python3','usr_customize.py',filename])
         
     def press3(self):
         # Check if CS is running in launcher; if not, open it.
         # Check if jaco.py is running in launcher; if not, start it. If so, kill and restart it.
         if self.coppelia is None:
-            self.coppelia = subprocess.Popen(['/home/xander/coppelia/coppelia_jaco/CoppeliaSim_Edu_V4_3_0_Ubuntu20_04/coppeliaSim','/home/xander/coppelia/coppelia_jaco/coppelia_jaco/scene_jaco_circle.ttt'])
+            self.coppelia = subprocess.Popen(['/home/neurro/Desktop/jaco/CoppeliaSim_Edu_V4_3_0_Ubuntu20_04/coppeliaSim','/home/neurro/Desktop/jaco/coppelia_jaco-master/scene_jaco_circle.ttt'])
         if self.jaco_p is None:
             filename = tk.filedialog.askopenfilename(initialdir = ".",
                                               title = "Choose customization file",
@@ -78,7 +78,7 @@ class JacoUI:
                                                             "*.pkl*"),
                                                            ("all files",
                                                             "*.*")))
-            self.jaco_p = subprocess.Popen(['python','jaco.py',filename])
+            self.jaco_p = subprocess.Popen(['python3','jaco.py',filename])
         else:
             self.jaco_p.terminate()
             filename = tk.filedialog.askopenfilename(initialdir = ".",
@@ -87,7 +87,7 @@ class JacoUI:
                                                             "*.pkl*"),
                                                            ("all files",
                                                             "*.*")))
-            self.jaco_p = subprocess.Popen(['python','jaco.py',filename])
+            self.jaco_p = subprocess.Popen(['python3','jaco.py',filename])
             
         
     def press4(self):
