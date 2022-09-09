@@ -70,7 +70,7 @@ class JacoUI:
         # Check if CS is running in launcher; if not, open it.
         # Check if jaco.py is running in launcher; if not, start it. If so, kill and restart it.
         if self.coppelia is None:
-            self.coppelia = subprocess.Popen(['/home/neurro/Desktop/jaco/CoppeliaSim_Edu_V4_3_0_Ubuntu20_04/coppeliaSim','/home/neurro/Desktop/jaco/coppelia_jaco-master/scene_jaco_circle.ttt'])
+            self.coppelia = subprocess.Popen(['/home/neurro/Desktop/jaco/CoppeliaSim_Edu_V4_3_0_rev12_Ubuntu20_04/coppeliaSim','/home/neurro/Desktop/jaco/coppelia_jaco-master/scene_jaco_circle.ttt'])
         if self.jaco_p is None:
             filename = tk.filedialog.askopenfilename(initialdir = ".",
                                               title = "Choose customization file",

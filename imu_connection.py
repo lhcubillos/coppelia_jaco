@@ -61,7 +61,7 @@ class IMUStream:
         self.period = 1.0 / frequency
 
     def connect(self):
-        self.dng = ts_api.TSDongle(com_port=sys.argv[1])
+        self.dng = ts_api.TSDongle(com_port = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0")
         self.imu_devices = [dev for dev in self.dng]
 
         for imu_dev in self.imu_devices:
