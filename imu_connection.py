@@ -46,7 +46,7 @@ from zcmtypes.euler_t import euler_t
 # first one from the list.
 
 # Make sure to set the port below to the IMU USB device
-PORT = "/dev/ttyACM0"
+# PORT = "/dev/ttyACM0"
 
 
 class IMUStream:
@@ -61,7 +61,7 @@ class IMUStream:
         self.period = 1.0 / frequency
 
     def connect(self):
-        self.dng = ts_api.TSDongle(com_port=PORT)
+        self.dng = ts_api.TSDongle(com_port = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0")
         self.imu_devices = [dev for dev in self.dng]
 
         for imu_dev in self.imu_devices:
