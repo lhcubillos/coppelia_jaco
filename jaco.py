@@ -11,7 +11,10 @@ from zerocm import ZCM
 from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
 
-sys.path.insert(1,"/home/xander/coppelia/coppelia_jaco/CoppeliaSim_Edu_V4_3_0_Ubuntu20_04/programming/zmqRemoteApi/clients/python")
+curDir = os.getCwd()
+syspathIn = curCwd + "/../CoppeliaSim_Edu_V4_3_0_rev12_Ubuntu20_04/programming/zmqRemoteApi/clients/python"
+sys.path.insert(1, syspathIn)
+
 ###########################################################################
 # IMPORTANT: Make the above your path to:
 # CoppeliaSim/programming/zmqRemoteApi/clients/python

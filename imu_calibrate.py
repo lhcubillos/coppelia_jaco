@@ -91,7 +91,7 @@ class CalibrateImu:
         # finally, close the calibration window and launch the customizer automatically on filename.pkl
         self.window.destroy()
         print("Calibration done, opening customizer")
-        subprocess.Popen(['python','usr_customize.py',self.filename])
+        subprocess.Popen(['python3','usr_customize.py',self.filename])
         sys.exit()
 
     def cancelCalib(self):
