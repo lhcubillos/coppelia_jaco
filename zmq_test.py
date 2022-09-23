@@ -1,7 +1,9 @@
 import time
 import sys
+import os
 print(sys.path)
-sys.path.insert(1,"/home/neurro/Desktop/jaco/CoppeliaSim_Edu_V4_3_0_Ubuntu20_04/programming/zmqRemoteApi/clients/python")
+curCwd = os.getcwd()
+sys.path.insert(1, curCwd + "/../CoppeliaSim/programming/zmqRemoteApi/clients/python")
 from zmqRemoteApi import RemoteAPIClient
 
 
