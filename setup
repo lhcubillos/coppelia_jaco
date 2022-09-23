@@ -10,17 +10,15 @@ checkInstalled(){
   fi
 }
 
-#sudo apt-get update
+sudo apt-get update
 checkInstalled "python3-pip"
-#pip install -r requirements.txt
+pip install -r requirements.txt
 checkInstalled "cython"
 checkInstalled "libzmq3-dev"
 checkInstalled "libelf-dev"
 checkInstalled "python3-tk"
-#echo 'export ZCM_DEFAULT_URL=ipc' >> ~/.bashrc
-#(cd ../ZeroCM* && python3 waf configure --use-python --use-ipc --use-zmq --use-elf)
-mv ../CoppeliaSim* ../CoppeliaSim
-mkdir ../CoppeliaSim/jaco_data
-#(cd ../CoppeliaSim* && cd programming/zmqRemoteApi/clients/python && curDir=$(pwd) && echo "export PYTHONPATH=$curDir:\$PYTHONPATH" >> ~/.bashrc)
+echo 'export ZCM_DEFAULT_URL=ipc' >> ~/.bashrc
+(cd ../ZeroCM* && python3 waf configure --use-python --use-ipc --use-zmq --use-elf)
+(cd ../CoppeliaSim* && cd programming/zmqRemoteApi/clients/python && curDir=$(pwd) && echo "export PYTHONPATH=$curDir:\$PYTHONPATH" >> ~/.bashrc)
 source ~/.bashrc
 echo "Project Jaco installed successfully!"

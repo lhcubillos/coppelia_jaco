@@ -5,12 +5,10 @@ from sklearn.decomposition import PCA
 import sys
 import pickle as pk
 import tkinter as tk
-from tkinter import messagebox
 import subprocess
 
 from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
-from threading import *
 
 from collections import deque
 
@@ -52,10 +50,6 @@ class CalibrateImu:
         # parse UI text input
         self.runCalib()
         return 'break'
-    
-    def threading(self):
-        t1=Thread(target=self.runCalib)
-        t1.start()
         
     def runCalib(self):
         # upon clicking the calibrate button, disables UI
@@ -69,7 +63,7 @@ class CalibrateImu:
         try:
             while not self.should_stop:
                 if (time.time() - self.start_time) >= self.stop_time:
-                    self.should_stop = True
+                    self.should_stop = True  
         except KeyboardInterrupt:
             self.should_stop = True
         self.zcm.stop()
@@ -105,12 +99,7 @@ class CalibrateImu:
         if not self.running:
             self.window.destroy()
         else:
-            msgBox = messagebox.askquestion("Exit", "Are you sure to exit the calibration process?", icon="warning")
-            if msgBox == 'yes':
-                self.should_stop = True
-                self.zcm.stop()
-                sys.exit()
-                self.window.destroy()
+            self.should_stop = True
         
     def init_process(self,filename):
     	# Open file to save to
@@ -124,13 +113,13 @@ class CalibrateImu:
         self.text = tk.Text(self.window,width=10,height=1)
         self.text.insert("0.0","60.0")
         self.text.bind("<Return>",self.parseText)
-        self.button = tk.Button(self.window,text='Start Calibration',command=self.threading)
+        self.button = tk.Button(self.window,text='Start Calibration',command=self.runCalib)
         self.button2 = tk.Button(self.window,text='Cancel',command=self.cancelCalib)
         self.label.pack()
         self.text.pack()
         self.button.pack()
         self.button2.pack()
-        self.window.geometry('800x500')
+        self.window.geometry('320x100')
         # ZCM
         self.zcm.subscribe(self.channel, imus_t, self.handle_messages)
 
