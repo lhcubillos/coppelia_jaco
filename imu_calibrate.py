@@ -50,6 +50,21 @@ class CalibrateImu:
         # parse UI text input
         self.runCalib()
         return 'break'
+
+    def getPcaNormalized(self, data, num_components):
+        data_pca = PCA(n_components=num_components)
+        data_pca.fit(data)
+        pca_transform=data_pca.transform(np.identity(4))
+        norms = np.linalg.norm(pca_transform,num_components,0)
+        variances = data_pca.explained_variance_
+        [n,m] = np.shape(pca_transform)
+        print("pca_transform: ", np.shape(pca_transform))
+        print(pca_transform)
+        pca_normalized = pca_transform
+        for i in range(n):
+            for j in range(m):
+                pca_normalized[i,j] = (pca_transform[i,j]/norms[j])/np.sqrt(variances[j])
+        return pca_normalized
         
     def runCalib(self):
         # upon clicking the calibrate button, disables UI
@@ -73,17 +88,14 @@ class CalibrateImu:
         # after data collection, process data via PCA to obtain first two principle components
         # then, build the PCA transformation matrix, normalize/center them, and save to filename.pkl
         data = np.genfromtxt(filename[:-4]+".calib",delimiter=",")
-        data_pca = PCA(n_components=2)
-        data_pca.fit(data)
-        pca_transform=data_pca.transform(np.identity(8))
-        norms = np.linalg.norm(pca_transform,2,0)
-        variances = data_pca.explained_variance_
-        [n,m] = np.shape(pca_transform)
-        pca_normalized = pca_transform
-        for i in range(n):
-            for j in range(m):
-                pca_normalized[i,j] = (pca_transform[i,j]/norms[j])/np.sqrt(variances[j])
-        pca_dump = [pca_normalized, None]
+
+        data_1 = np.array(data[:, 0:4])
+        data_2 = np.array(data[:, 4:8])
+
+        pca_normalized_1 = self.getPcaNormalized(data_1, 2)
+        pca_normalized_2 = self.getPcaNormalized(data_2, 1)
+
+        pca_dump = [pca_normalized_1, pca_normalized_2, None]
         f = open(filename,"wb")
         pk.dump(pca_dump, f)
         f.close

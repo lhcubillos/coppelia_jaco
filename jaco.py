@@ -64,7 +64,8 @@ class Simulation:
         
         # If no usr_cust matrix present, uses identity matrix (i.e. no customization)
         if self.usr_cust is None:
-            self.usr_cust = np.identity(2)
+            # modified by deepak identity(2)
+            self.usr_cust = np.identity(3)
         self.pca_cust = np.matmul(self.pca,self.usr_cust)
         
         # Prints the PCA model and usr_cust matrices to the terminal and closes .pkl file

@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
 NavigationToolbar2Tk)
 import numpy as np
+from sklearn.metrics import precision_recall_curve
 from zerocm import ZCM
 import sys
 import pickle as pk
@@ -45,12 +46,16 @@ class LivePlotCust:
         self.filename = filename
         f = open(filename,"rb")
         pca_load = pk.load(f)
-        self.pca = pca_load[0]
-        self.cust = pca_load[1]
+        self.pca_1 = pca_load[0]
+        # self.cust_1 = pca_load[1]
+        self.pca_2 = pca_load[1]
+        self.cust = pca_load[2]
         if self.cust is None:
-            self.cust = np.identity(2)
+            self.cust = np.identity(3)
         f.close
-        self.pca_cust = np.matmul(self.pca,self.cust)
+        
+        self.pca = np.hstack((self.pca_1, self.pca_2))
+        self.pca_cust = np.matmul(self.pca,self.cust)        
 
         self.canvas = None
         self.window = None
@@ -58,6 +63,10 @@ class LivePlotCust:
         self.slidetext1 = None
         self.slider2 = None
         self.slidetext2 = None
+
+        # TODO: Qi / Deepak
+        # figure out how to interchange the axes when we have 3 of them
+        # Add slider, screen and flip buttons for 3rd axis
         if self.cust[0,0] == 0:
             self.reverse = True
         else:
@@ -70,6 +79,10 @@ class LivePlotCust:
             self.flip2 = True
         else:
             self.flip2 = False
+        if np.sign(self.cust[2,2]) == -1:
+            self.flip3 = True
+        else:
+            self.flip3 = False
         self.accept = False
         # ZCM
         self.zcm = ZCM("")
@@ -87,6 +100,13 @@ class LivePlotCust:
         self.slider2.set(text)
         self.slidetext2.delete("0.0","end")
         self.slidetext2.delete("0.0")
+        return 'break'
+
+    def parse3(self,event):
+        text = float(self.slidetext3.get("0.0","end").strip())
+        self.slider3.set(text)
+        self.slidetext3.delete("0.0","end")
+        self.slidetext3.delete("0.0")
         return 'break'
         
     def press1(self):
@@ -110,7 +130,7 @@ class LivePlotCust:
     def press4(self):
         self.accept = True
         out_f = open(self.filename[:-4]+"_cust.pkl","wb")
-        pk.dump([self.pca,self.cust],out_f)
+        pk.dump([self.pca_1, self.pca_2, self.cust],out_f)
         print("Saved user customizations to "+self.filename[:-4]+"_cust.pkl")
         out_f.close()
         self.window.destroy()
@@ -118,6 +138,12 @@ class LivePlotCust:
     def press5(self):
         self.accept = False
         self.window.destroy()
+
+    def press6(self):
+        if self.flip3:
+            self.flip3 = False
+        else:
+            self.flip3 = True
         
     def init_process(self):
         self.window = tk.Tk()
@@ -128,16 +154,21 @@ class LivePlotCust:
         self.slider1.set(abs(self.cust[0,0])+(self.cust[0,1]))
         self.slider2 = tk.Scale(self.window,label='Sensitivity 2',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
+        self.slider3 = tk.Scale(self.window,label='Sensitivity 3',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider3.set(abs(self.cust[2,2]))
         self.slidetext1 = tk.Text(self.window,width=10,height=1)
         self.slidetext1.bind("<Return>",self.parse1)
         self.slidetext2 = tk.Text(self.window,width=10,height=1)
         self.slidetext2.bind("<Return>",self.parse2)
+        self.slidetext3 = tk.Text(self.window,width=10,height=1)
+        self.slidetext3.bind("<Return>",self.parse3)
         
         self.button1 = tk.Button(self.window,text='Switch motions 1 and 2',command=self.press1)
         self.button2 = tk.Button(self.window,text='Reverse axis 1',command=self.press2)
         self.button3 = tk.Button(self.window,text='Reverse axis 2',command=self.press3)
         self.button4 = tk.Button(self.window,text='Accept',command=self.press4)
         self.button5 = tk.Button(self.window,text='Cancel',command=self.press5)
+        self.button6 = tk.Button(self.window,text='Reverse axis 3',command=self.press6)
         self.slider1.pack()
         self.slidetext1.pack()
         self.slider2.pack()
@@ -147,6 +178,7 @@ class LivePlotCust:
         self.button3.pack()
         self.button4.pack()
         self.button5.pack()
+        self.button6.pack()
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
         (self.dot,) = self.ax.plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
@@ -167,15 +199,20 @@ class LivePlotCust:
     def handle_messages(self, channel, msg):
         sense1 = float(self.slider1.get())
         sense2 = float(self.slider2.get())
-        
-        self.cust = np.array([[sense1,0.0],[0.0,sense2]])
+        sense3 = float(self.slider3.get())
+
+        self.cust = np.array([[sense1,0.0,0.0],[0.0,sense2,0.0],[0.0,0.0,sense3]])
         
         if self.reverse:
-            self.cust = np.matmul(self.cust,np.array([[0.0,1.0],[1.0,0.0]]))
+            # TODO: Qi / Deepak
+            # correct this
+            self.cust = np.matmul(self.cust,np.array([[0.0,1.0,0.0],[1.0,0.0,0.0],[0.0,0.0,1.0]]))
         if self.flip1:
-            self.cust = np.matmul(self.cust,np.array([[-1.0,0.0],[0.0,1.0]]))
+            self.cust = np.matmul(self.cust,np.array([[-1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]]))
         if self.flip2:
-            self.cust = np.matmul(self.cust,np.array([[1.0,0.0],[0.0,-1.0]]))
+            self.cust = np.matmul(self.cust,np.array([[1.0,0.0,0.0],[0.0,-1.0,0.0],[0.0,0.0,1.0]]))
+        if self.flip3:
+            self.cust = np.matmul(self.cust,np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,-1.0]]))
         
         self.pca_cust = np.matmul(self.pca,self.cust)
         if self.last_msg_timestamp is not None:
@@ -192,7 +229,12 @@ class LivePlotCust:
             msg.imu_values[2].pitch,msg.imu_values[2].roll,\
             msg.imu_values[3].pitch,msg.imu_values[3].roll
         ]).reshape(1,-1)
-            [self.x,__,self.y] = compute_velocity(self.imu_data,self.pca_cust)
+            [self.x,self.y,self.z] = compute_velocity(self.imu_data,self.pca_cust)
+            if self.z != 0:
+                print("vel: [{}, {}, {}]".format(self.x, self.y, self.z))
+                
+            # TODO: Qi/ Deepak
+            # Add display for the dot in 3rd axis
             self.dot.set_data(np.array(self.x), np.array(self.y))
             
     def draw_plot(self):
