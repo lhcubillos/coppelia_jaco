@@ -17,7 +17,7 @@ zcmL = ZCM()
 
 def on_press(key):
     global imu_values, zcmL
-    imu_values = [0.0, 0.0]
+    imu_values = [0.0, 0.0, 0.0]
     key_pressed = False
     if key == Key.left:
         imu_values[1] = -math.pi / 8
@@ -31,6 +31,12 @@ def on_press(key):
     elif key == Key.up:
         imu_values[0] = math.pi / 8
         key_pressed = True
+    elif str(key) == "'i'":
+        imu_values[2] = math.pi / 8
+        key_pressed = True
+    elif str(key) == "','":
+        imu_values[2] = -math.pi / 8
+        key_pressed = True
     elif str(key) == "'s'":
         key_pressed = True
 
@@ -41,6 +47,12 @@ def on_press(key):
         euler.roll = imu_values[1]
         euler.available = True
         msg.imu_values[0] = euler
+
+        euler_2 = euler_t()
+        euler_2.pitch = imu_values[2]
+        euler_2.roll = 0.0
+        euler_2.available = True
+        msg.imu_values[2] = euler_2
         msg.utime = int(time.time() * 1000000)
         zcmL.publish("IMU", msg)
 
@@ -54,6 +66,11 @@ zcmL.publish("IMU", imus_t())
 time.sleep(1)
 
 zcmL.start()
+print("---------------------------------------------------------------------------------")
+print("\tFOR CONTROLLING ARM IN Z AXIS: \n\t\t Use the keys 'i' and ',' for forward and backward\n\n")
+print("\tFOR CONTROLLING ARM IN X-Y PLANE: \n\t\t Use the arrow keys (up, down, left, right)\n\n")
+print("\tTO STOP THE ARM: \n\t\t Press the key 's'")
+print("---------------------------------------------------------------------------------")
 try:
     with Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()

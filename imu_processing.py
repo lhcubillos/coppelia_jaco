@@ -42,7 +42,7 @@ def compute_velocity(imu_data,pca):
 # Check if calculated velocity is within the "deadzone" tolerance; if so,
 # instructs the processing to return zero velocity
 def value_within_tolerance(velocity):
-    value = np.sqrt(np.power(velocity[0]+TOLERANCE,2) + np.power(velocity[1],2) + np.power(velocity[2]+TOLERANCE,2))
+    value = np.sqrt(np.power(velocity[0]+TOLERANCE,2) + np.power(velocity[1]+TOLERANCE,2) + np.power(velocity[2]+TOLERANCE,2))
     if value<TOLERANCE:
         return True
     return False
