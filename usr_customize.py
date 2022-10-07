@@ -1,5 +1,5 @@
 import time
-from matplotlib import pyplot as plt
+from matplotlib import projections, pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
 NavigationToolbar2Tk)
 import numpy as np
@@ -35,9 +35,11 @@ class LivePlotCust:
     def __init__(self, channel, filename):
         self.fig = None
         self.ax = None
-        self.dot = None
+        self.dot1 = None
+        self.dot2 = None
         self.axbackground = None
         self.maxspeed = 0.2
+        self.z = 0.0
         self.y = 0.0
         self.x = 0.0
         self.first_time = None
@@ -63,10 +65,9 @@ class LivePlotCust:
         self.slidetext1 = None
         self.slider2 = None
         self.slidetext2 = None
+        self.slider3 = None
+        self.slidetext3 = None
 
-        # TODO: Qi / Deepak
-        # figure out how to interchange the axes when we have 3 of them
-        # Add slider, screen and flip buttons for 3rd axis
         if self.cust[0,0] == 0:
             self.reverse = True
         else:
@@ -126,8 +127,14 @@ class LivePlotCust:
             self.flip2 = False
         else:
             self.flip2 = True
-        
+
     def press4(self):
+        if self.flip3:
+            self.flip3 = False
+        else:
+            self.flip3 = True
+        
+    def press5(self):
         self.accept = True
         out_f = open(self.filename[:-4]+"_cust.pkl","wb")
         pk.dump([self.pca_1, self.pca_2, self.cust],out_f)
@@ -135,20 +142,14 @@ class LivePlotCust:
         out_f.close()
         self.window.destroy()
     
-    def press5(self):
+    def press6(self):
         self.accept = False
         self.window.destroy()
-
-    def press6(self):
-        if self.flip3:
-            self.flip3 = False
-        else:
-            self.flip3 = True
         
     def init_process(self):
         self.window = tk.Tk()
         self.window.title('User Customization')
-        self.window.geometry('1000x500')
+        self.window.geometry('2048x1024')
         
         self.slider1 = tk.Scale(self.window,label='Sensitivity 1',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider1.set(abs(self.cust[0,0])+(self.cust[0,1]))
@@ -166,33 +167,44 @@ class LivePlotCust:
         self.button1 = tk.Button(self.window,text='Switch motions 1 and 2',command=self.press1)
         self.button2 = tk.Button(self.window,text='Reverse axis 1',command=self.press2)
         self.button3 = tk.Button(self.window,text='Reverse axis 2',command=self.press3)
-        self.button4 = tk.Button(self.window,text='Accept',command=self.press4)
-        self.button5 = tk.Button(self.window,text='Cancel',command=self.press5)
-        self.button6 = tk.Button(self.window,text='Reverse axis 3',command=self.press6)
+        self.button4 = tk.Button(self.window,text='Reverse axis 3',command=self.press4)
+        self.button5 = tk.Button(self.window,text='Accept',command=self.press5)
+        self.button6 = tk.Button(self.window,text='Cancel',command=self.press6)
         self.slider1.pack()
         self.slidetext1.pack()
         self.slider2.pack()
         self.slidetext2.pack()
+        self.slider3.pack()
+        self.slidetext3.pack()
         self.button1.pack()
         self.button2.pack()
         self.button3.pack()
         self.button4.pack()
         self.button5.pack()
         self.button6.pack()
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(1, 1, 1)
-        (self.dot,) = self.ax.plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
-        self.ax.set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
-        self.ax.set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        
+        self.fig, self.ax = plt.subplots(2, 1)
+
+        # setup plot for XY plane - TOP view of motion
+        (self.dot1,) = self.ax[0].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
+        self.ax[0].set_xlabel('y')
+        self.ax[0].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.ax[0].set_ylabel('x')
+        self.ax[0].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
+
+        # setup plot for XZ plane - SIDE view of motion
+        (self.dot2,) = self.ax[1].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
+        self.ax[1].set_xlabel('x')
+        self.ax[1].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.ax[1].set_ylabel('z')
+        self.ax[1].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
         
         #self.axbackground = self.fig.canvas.copy_from_bbox(self.ax.bbox)
         self.canvas = FigureCanvasTkAgg(self.fig,master=self.window)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack()
         #plt.show(block=False)
-        
 
-        
         # ZCM
         self.zcm.subscribe(self.channel, imus_t, self.handle_messages)
 
@@ -204,8 +216,6 @@ class LivePlotCust:
         self.cust = np.array([[sense1,0.0,0.0],[0.0,sense2,0.0],[0.0,0.0,sense3]])
         
         if self.reverse:
-            # TODO: Qi / Deepak
-            # correct this
             self.cust = np.matmul(self.cust,np.array([[0.0,1.0,0.0],[1.0,0.0,0.0],[0.0,0.0,1.0]]))
         if self.flip1:
             self.cust = np.matmul(self.cust,np.array([[-1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]]))
@@ -230,12 +240,9 @@ class LivePlotCust:
             msg.imu_values[3].pitch,msg.imu_values[3].roll
         ]).reshape(1,-1)
             [self.x,self.y,self.z] = compute_velocity(self.imu_data,self.pca_cust)
-            if self.z != 0:
-                print("vel: [{}, {}, {}]".format(self.x, self.y, self.z))
-                
-            # TODO: Qi/ Deepak
-            # Add display for the dot in 3rd axis
-            self.dot.set_data(np.array(self.x), np.array(self.y))
+
+            self.dot1.set_data(np.array(self.y), np.array(self.x))
+            self.dot2.set_data(np.array(self.x), np.array(self.z))
             
     def draw_plot(self):
         

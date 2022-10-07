@@ -58,8 +58,6 @@ class CalibrateImu:
         norms = np.linalg.norm(pca_transform,num_components,0)
         variances = data_pca.explained_variance_
         [n,m] = np.shape(pca_transform)
-        print("pca_transform: ", np.shape(pca_transform))
-        print(pca_transform)
         pca_normalized = pca_transform
         for i in range(n):
             for j in range(m):

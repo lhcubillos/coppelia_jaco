@@ -17,22 +17,21 @@ def compute_velocity(imu_data,pca):
     imu_data_1 = imu_data[:, 0:4]
     pca_1 = pca[:, 0:2]
     imu_data_2 = imu_data[:, 4:8]
-    pca_2 = pca[:, 1:2]
+    pca_2 = pca[:, 2]
     imu_vel_1 = np.matmul(pca_1.T,imu_data_1.T)
     imu_vel_2 = np.matmul(pca_2.T,imu_data_2.T)
-    print("pca_2: {}, imu_data: {}, imu_data_2: {}, imu_vel_2: {}".format(pca_2, imu_data, imu_data_2, imu_vel_2))
     vel = [0.0, 0.0, 0.0]
     # Arbitratily deciding component 1 is Z, component 2 is X
     if imu_data is not None:
         # Z component
-        vel[2] = get_speed(imu_vel_2[0][0])
+        vel[2] = get_speed(imu_vel_2[0])
         # Y component
         vel[1] = get_speed(imu_vel_1[1][0])
         # X component
         vel[0] = get_speed(imu_vel_1[0][0])
-        # Move Z only for a turn of shoulders
-        if (vel[0]*vel[2]) > 0:
-            vel[2] = 0.0
+        # # Move Z only for a turn of shoulders
+        # if (vel[0]*vel[2]) > 0:
+        #     vel[2] = 0.0
         # For smoother control, tolerance considers total velocity, not components
         if value_within_tolerance(vel):
             vel[2] = 0.0

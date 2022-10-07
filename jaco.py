@@ -59,13 +59,16 @@ class Simulation:
         self.pca_f = pca_filename
         f = open(self.pca_f,"rb")
         pca_load = pk.load(f)
-        self.pca = pca_load[0]
-        self.usr_cust = pca_load[1]
+        self.pca_1 = pca_load[0]
+        self.pca_2 = pca_load[1]
+        self.usr_cust = pca_load[2]
         
         # If no usr_cust matrix present, uses identity matrix (i.e. no customization)
         if self.usr_cust is None:
             # modified by deepak identity(2)
             self.usr_cust = np.identity(3)
+
+        self.pca = np.hstack((self.pca_1, self.pca_2))
         self.pca_cust = np.matmul(self.pca,self.usr_cust)
         
         # Prints the PCA model and usr_cust matrices to the terminal and closes .pkl file
