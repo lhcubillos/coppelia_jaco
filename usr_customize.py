@@ -1,3 +1,4 @@
+from doctest import master
 import time
 from matplotlib import projections, pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
@@ -61,6 +62,40 @@ class LivePlotCust:
 
         self.canvas = None
         self.window = None
+
+        self.graph_frame = None
+        self.graph_frame_nested = None
+
+
+        self.custom_frame = None
+        self.custom_frame_nested = None
+
+        self.switch_button_frame = None
+
+        self.axis_1_frame = None
+        self.slider_axis1_frame = None
+        self.slider_axis1_frame_nested = None
+        self.switch_axis1_frame = None
+        self.switch_axis1_frame_nested = None
+
+        self.axis_2_frame = None
+        self.slider_axis2_frame = None
+        self.slider_axis2_frame_nested = None
+        self.switch_axis2_frame = None
+        self.switch_axis2_frame_nested = None
+
+        self.axis_3_frame = None
+        self.slider_axis3_frame = None
+        self.slider_axis3_frame_nested = None
+        self.switch_axis3_frame = None
+        self.switch_axis3_frame_nested = None
+
+        self.accept_cancel_frame = None
+        self.accept_frame = None
+        self.accept_frame_nested = None
+        self.cancel_frame = None
+        self.cancel_frame_nested = None
+
         self.slider1 = None
         self.slidetext1 = None
         self.slider2 = None
@@ -150,26 +185,58 @@ class LivePlotCust:
         self.window = tk.Tk()
         self.window.title('User Customization')
         self.window.geometry('2048x1024')
+
+        self.graph_frame = tk.Frame(master=self.window)
+        self.graph_frame_nested = tk.Frame(master=self.graph_frame)
+
+        self.custom_frame = tk.Frame(master=self.window)
+        self.custom_frame_nested = tk.Frame(master=self.custom_frame)
+
+        self.switch_button_frame = tk.Frame(master=self.custom_frame)
+
+        self.axis_1_frame = tk.Frame(master=self.custom_frame)
+        self.slider_axis1_frame = tk.Frame(master=self.axis_1_frame)
+        self.slider_axis1_frame_nested = tk.Frame(master=self.slider_axis1_frame)
+        self.switch_axis1_frame = tk.Frame(master=self.axis_1_frame)
+        self.switch_axis1_frame_nested = tk.Frame(master=self.switch_axis1_frame)
+
+        self.axis_2_frame = tk.Frame(master=self.custom_frame)
+        self.slider_axis2_frame = tk.Frame(master=self.axis_2_frame)
+        self.slider_axis2_frame_nested = tk.Frame(master=self.slider_axis2_frame)
+        self.switch_axis2_frame = tk.Frame(master=self.axis_2_frame)
+        self.switch_axis2_frame_nested = tk.Frame(master=self.switch_axis2_frame)
         
-        self.slider1 = tk.Scale(self.window,label='Sensitivity 1',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.axis_3_frame = tk.Frame(master=self.custom_frame)
+        self.slider_axis3_frame = tk.Frame(master=self.axis_3_frame)
+        self.slider_axis3_frame_nested = tk.Frame(master=self.slider_axis3_frame)
+        self.switch_axis3_frame = tk.Frame(master=self.axis_3_frame)
+        self.switch_axis3_frame_nested = tk.Frame(master=self.switch_axis3_frame)
+
+        self.accept_cancel_frame = tk.Frame(self.custom_frame)
+        self.accept_frame = tk.Frame(self.accept_cancel_frame)
+        self.accept_frame_nested = tk.Frame(self.accept_frame)
+        self.cancel_frame = tk.Frame(self.accept_cancel_frame)
+        self.cancel_frame_nested = tk.Frame(self.cancel_frame)
+        
+        self.slider1 = tk.Scale(self.slider_axis1_frame_nested,label='Sensitivity 1',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider1.set(abs(self.cust[0,0])+(self.cust[0,1]))
-        self.slider2 = tk.Scale(self.window,label='Sensitivity 2',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider2 = tk.Scale(self.slider_axis2_frame_nested,label='Sensitivity 2',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
-        self.slider3 = tk.Scale(self.window,label='Sensitivity 3',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider3 = tk.Scale(self.slider_axis3_frame_nested,label='Sensitivity 3',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider3.set(abs(self.cust[2,2]))
-        self.slidetext1 = tk.Text(self.window,width=10,height=1)
+        self.slidetext1 = tk.Text(self.slider_axis1_frame_nested,width=10,height=1)
         self.slidetext1.bind("<Return>",self.parse1)
-        self.slidetext2 = tk.Text(self.window,width=10,height=1)
+        self.slidetext2 = tk.Text(self.slider_axis2_frame_nested,width=10,height=1)
         self.slidetext2.bind("<Return>",self.parse2)
-        self.slidetext3 = tk.Text(self.window,width=10,height=1)
+        self.slidetext3 = tk.Text(self.slider_axis3_frame_nested,width=10,height=1)
         self.slidetext3.bind("<Return>",self.parse3)
         
-        self.button1 = tk.Button(self.window,text='Switch motions 1 and 2',command=self.press1)
-        self.button2 = tk.Button(self.window,text='Reverse axis 1',command=self.press2)
-        self.button3 = tk.Button(self.window,text='Reverse axis 2',command=self.press3)
-        self.button4 = tk.Button(self.window,text='Reverse axis 3',command=self.press4)
-        self.button5 = tk.Button(self.window,text='Accept',command=self.press5)
-        self.button6 = tk.Button(self.window,text='Cancel',command=self.press6)
+        self.button1 = tk.Button(self.switch_button_frame,text='Switch motions 1 and 2',command=self.press1)
+        self.button2 = tk.Button(self.switch_axis1_frame_nested,text='Reverse axis 1',command=self.press2)
+        self.button3 = tk.Button(self.switch_axis2_frame_nested,text='Reverse axis 2',command=self.press3)
+        self.button4 = tk.Button(self.switch_axis3_frame_nested,text='Reverse axis 3',command=self.press4)
+        self.button5 = tk.Button(self.accept_frame_nested,text='Accept',command=self.press5)
+        self.button6 = tk.Button(self.cancel_frame_nested,text='Cancel',command=self.press6)
         self.slider1.pack()
         self.slidetext1.pack()
         self.slider2.pack()
@@ -182,27 +249,58 @@ class LivePlotCust:
         self.button4.pack()
         self.button5.pack()
         self.button6.pack()
+
+        self.custom_frame.pack(side=tk.LEFT, expand=True)
+        self.custom_frame_nested.pack(expand=True)
+
+        self.switch_button_frame.pack(expand=True, padx=10.0, pady=10.0)
+
+        self.axis_1_frame.pack(fill=tk.BOTH, expand=True)
+        self.slider_axis1_frame.pack(fill=tk.BOTH, side=tk.LEFT, expand=True, padx=10.0, pady=10.0)
+        self.slider_axis1_frame_nested.pack(expand=True)
+        self.switch_axis1_frame.pack(fill=tk.BOTH, side=tk.RIGHT, expand=True, padx=10.0, pady=10.0)
+        self.switch_axis1_frame_nested.pack(expand=True)
+
+        self.axis_2_frame.pack(fill=tk.BOTH, expand=True)
+        self.slider_axis2_frame.pack(fill=tk.BOTH, side=tk.LEFT, expand=True, padx=10.0, pady=10.0)
+        self.slider_axis2_frame_nested.pack(expand=True)
+        self.switch_axis2_frame.pack(fill=tk.BOTH, side=tk.RIGHT, expand=True, padx=10.0, pady=10.0)
+        self.switch_axis2_frame_nested.pack(expand=True)
+
+        self.axis_3_frame.pack(fill=tk.BOTH, expand=True)
+        self.slider_axis3_frame.pack(fill=tk.BOTH, side=tk.LEFT, expand=True, padx=10.0, pady=10.0)
+        self.slider_axis3_frame_nested.pack(expand=True)
+        self.switch_axis3_frame.pack(fill=tk.BOTH, side=tk.RIGHT, expand=True, padx=10.0, pady=10.0)
+        self.switch_axis3_frame_nested.pack(expand=True)
+
+        self.accept_cancel_frame.pack(fill=tk.BOTH, expand=True)
+        self.accept_frame.pack(fill=tk.BOTH, side=tk.LEFT, expand=True, padx=10.0, pady=10.0)
+        self.accept_frame_nested.pack(expand=True)
+        self.cancel_frame.pack(fill=tk.BOTH, side=tk.RIGHT, expand=True, padx=10.0, pady=10.0)
+        self.cancel_frame_nested.pack(expand=True)
         
         self.fig, self.ax = plt.subplots(2, 1)
 
         # setup plot for XY plane - TOP view of motion
         (self.dot1,) = self.ax[0].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
-        self.ax[0].set_xlabel('y')
-        self.ax[0].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
-        self.ax[0].set_ylabel('x')
-        self.ax[0].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.ax[1].set_xlabel('y')
+        self.ax[1].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.ax[1].set_ylabel('x')
+        self.ax[1].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
 
         # setup plot for XZ plane - SIDE view of motion
         (self.dot2,) = self.ax[1].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
-        self.ax[1].set_xlabel('x')
-        self.ax[1].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
-        self.ax[1].set_ylabel('z')
-        self.ax[1].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.ax[0].set_xlabel('')
+        self.ax[0].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.ax[0].set_ylabel('z')
+        self.ax[0].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
         
         #self.axbackground = self.fig.canvas.copy_from_bbox(self.ax.bbox)
-        self.canvas = FigureCanvasTkAgg(self.fig,master=self.window)
+        self.canvas = FigureCanvasTkAgg(self.fig,master=self.graph_frame_nested)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack()
+        self.graph_frame.pack(fill=tk.BOTH, side=tk.RIGHT, expand=True)
+        self.graph_frame_nested.pack(expand=True)
         #plt.show(block=False)
 
         # ZCM
@@ -241,8 +339,8 @@ class LivePlotCust:
         ]).reshape(1,-1)
             [self.x,self.y,self.z] = compute_velocity(self.imu_data,self.pca_cust)
 
-            self.dot1.set_data(np.array(self.y), np.array(self.x))
-            self.dot2.set_data(np.array(self.x), np.array(self.z))
+            self.dot1.set_data(np.array(0.0), np.array(self.z))
+            self.dot2.set_data(np.array(self.y), np.array(self.x))
             
     def draw_plot(self):
         
