@@ -282,14 +282,14 @@ class LivePlotCust:
         self.fig, self.ax = plt.subplots(2, 1)
 
         # setup plot for XY plane - TOP view of motion
-        (self.dot1,) = self.ax[0].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
+        (self.dot1,) = self.ax[1].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
         self.ax[1].set_xlabel('y')
         self.ax[1].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
         self.ax[1].set_ylabel('x')
         self.ax[1].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
 
         # setup plot for XZ plane - SIDE view of motion
-        (self.dot2,) = self.ax[1].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
+        (self.dot2,) = self.ax[0].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
         self.ax[0].set_xlabel('')
         self.ax[0].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
         self.ax[0].set_ylabel('z')
