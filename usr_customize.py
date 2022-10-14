@@ -194,17 +194,13 @@ class LivePlotCust:
         ]).reshape(1,-1)
             [self.x,__,self.y] = compute_velocity(self.imu_data,self.pca_cust)
             self.dot.set_data(np.array(self.x), np.array(self.y))
-            
-    def draw_plot(self):
-        
-        self.canvas.draw()
-        #self.canvas.flush_events()
-        self.window.after(LivePlotCust.FREQUENCY,self.draw_plot)
+            self.canvas.draw()
+            self.window.update()
     
     def run(self):
         self.init_process()
         self.zcm.start()
-        self.draw_plot()
+        self.window.update()
         try:
             self.window.mainloop()
         except KeyboardInterrupt:

@@ -6,6 +6,7 @@ from imu_processing import compute_velocity
 import sys
 import pickle as pk
 import signal
+import os
 
 from zerocm import ZCM
 from zcmtypes.imus_t import imus_t
