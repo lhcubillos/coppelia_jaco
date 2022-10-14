@@ -339,8 +339,8 @@ class LivePlotCust:
         ]).reshape(1,-1)
             [self.x,self.y,self.z] = compute_velocity(self.imu_data,self.pca_cust)
 
-            self.dot1.set_data(np.array(0.0), np.array(self.z))
-            self.dot2.set_data(np.array(self.y), np.array(self.x))
+            self.dot2.set_data(np.array(0.0), np.array(self.z))
+            self.dot1.set_data(np.array(self.y), np.array(self.x))
             
     def draw_plot(self):
         
