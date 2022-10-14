@@ -341,17 +341,13 @@ class LivePlotCust:
 
             self.dot2.set_data(np.array(0.0), np.array(self.z))
             self.dot1.set_data(np.array(self.y), np.array(self.x))
-            
-    def draw_plot(self):
-        
-        self.canvas.draw()
-        #self.canvas.flush_events()
-        self.window.after(LivePlotCust.FREQUENCY,self.draw_plot)
+            self.canvas.draw()
+            self.window.update()
     
     def run(self):
         self.init_process()
         self.zcm.start()
-        self.draw_plot()
+        self.window.update()
         try:
             self.window.mainloop()
         except KeyboardInterrupt:
