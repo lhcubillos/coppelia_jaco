@@ -235,7 +235,7 @@ class LivePlotCust:
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
         self.slider3 = tk.Scale(self.slider_axis3_frame_nested,label='Sensitivity 3',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider3.set(abs(self.cust[2,2]))
-        self.slider4 = tk.Scale(self.rotate_axes_frame,label='Sensitivity 4',digits=3,resolution=0.0,from_=-180.0,to=180.0,orient='horizontal')
+        self.slider4 = tk.Scale(self.rotate_axes_frame,label='Rotation Angle(Axes 1 and 2)',digits=3,resolution=0.0,from_=-180.0,to=180.0,orient='horizontal',length=200)
         self.slider4.set(abs(0.0))
         self.slidetext1 = tk.Text(self.slider_axis1_frame_nested,width=10,height=1)
         self.slidetext1.bind("<Return>",self.parse1)
@@ -243,7 +243,7 @@ class LivePlotCust:
         self.slidetext2.bind("<Return>",self.parse2)
         self.slidetext3 = tk.Text(self.slider_axis3_frame_nested,width=10,height=1)
         self.slidetext3.bind("<Return>",self.parse3)
-        self.slidetext4 = tk.Text(self.rotate_axes_frame,width=10,height=1)
+        self.slidetext4 = tk.Text(self.rotate_axes_frame,width=15,height=1)
         self.slidetext4.bind("<Return>",self.parse4)
         
         self.button1 = tk.Button(self.switch_button_frame,text='Switch motions 1 and 2',command=self.press1)
