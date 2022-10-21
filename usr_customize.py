@@ -71,6 +71,7 @@ class LivePlotCust:
         self.custom_frame_nested = None
 
         self.switch_button_frame = None
+        self.rotate_axes_frame = None
 
         self.axis_1_frame = None
         self.slider_axis1_frame = None
@@ -102,6 +103,8 @@ class LivePlotCust:
         self.slidetext2 = None
         self.slider3 = None
         self.slidetext3 = None
+        self.slider4 = None
+        self.slidetext4 = None
 
         if self.cust[0,0] == 0:
             self.reverse = True
@@ -143,6 +146,13 @@ class LivePlotCust:
         self.slider3.set(text)
         self.slidetext3.delete("0.0","end")
         self.slidetext3.delete("0.0")
+        return 'break'
+
+    def parse4(self,event):
+        text = float(self.slidetext4.get("0.0","end").strip())
+        self.slider4.set(text)
+        self.slidetext4.delete("0.0","end")
+        self.slidetext4.delete("0.0")
         return 'break'
         
     def press1(self):
@@ -193,6 +203,7 @@ class LivePlotCust:
         self.custom_frame_nested = tk.Frame(master=self.custom_frame)
 
         self.switch_button_frame = tk.Frame(master=self.custom_frame)
+        self.rotate_axes_frame = tk.Frame(master=self.custom_frame)
 
         self.axis_1_frame = tk.Frame(master=self.custom_frame)
         self.slider_axis1_frame = tk.Frame(master=self.axis_1_frame)
@@ -224,12 +235,16 @@ class LivePlotCust:
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
         self.slider3 = tk.Scale(self.slider_axis3_frame_nested,label='Sensitivity 3',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider3.set(abs(self.cust[2,2]))
+        self.slider4 = tk.Scale(self.rotate_axes_frame,label='Sensitivity 4',digits=3,resolution=0.0,from_=-180.0,to=180.0,orient='horizontal')
+        self.slider4.set(abs(0.0))
         self.slidetext1 = tk.Text(self.slider_axis1_frame_nested,width=10,height=1)
         self.slidetext1.bind("<Return>",self.parse1)
         self.slidetext2 = tk.Text(self.slider_axis2_frame_nested,width=10,height=1)
         self.slidetext2.bind("<Return>",self.parse2)
         self.slidetext3 = tk.Text(self.slider_axis3_frame_nested,width=10,height=1)
         self.slidetext3.bind("<Return>",self.parse3)
+        self.slidetext4 = tk.Text(self.rotate_axes_frame,width=10,height=1)
+        self.slidetext4.bind("<Return>",self.parse4)
         
         self.button1 = tk.Button(self.switch_button_frame,text='Switch motions 1 and 2',command=self.press1)
         self.button2 = tk.Button(self.switch_axis1_frame_nested,text='Reverse axis 1',command=self.press2)
@@ -243,6 +258,8 @@ class LivePlotCust:
         self.slidetext2.pack()
         self.slider3.pack()
         self.slidetext3.pack()
+        self.slider4.pack()
+        self.slidetext4.pack()
         self.button1.pack()
         self.button2.pack()
         self.button3.pack()
@@ -254,6 +271,7 @@ class LivePlotCust:
         self.custom_frame_nested.pack(expand=True)
 
         self.switch_button_frame.pack(expand=True, padx=10.0, pady=10.0)
+        self.rotate_axes_frame.pack(expand=True, padx=10.0, pady=10.0)
 
         self.axis_1_frame.pack(fill=tk.BOTH, expand=True)
         self.slider_axis1_frame.pack(fill=tk.BOTH, side=tk.LEFT, expand=True, padx=10.0, pady=10.0)
@@ -311,6 +329,10 @@ class LivePlotCust:
         sense2 = float(self.slider2.get())
         sense3 = float(self.slider3.get())
 
+        rotation = float(self.slider4.get())
+        rotation_rad = np.deg2rad(rotation)
+        rotation_matrix = np.array([[np.cos(rotation_rad),-np.sin(rotation_rad),0.0],[np.sin(rotation_rad),np.cos(rotation_rad),0.0],[0.0,0.0,1.0]])
+
         self.cust = np.array([[sense1,0.0,0.0],[0.0,sense2,0.0],[0.0,0.0,sense3]])
         
         if self.reverse:
@@ -322,7 +344,9 @@ class LivePlotCust:
         if self.flip3:
             self.cust = np.matmul(self.cust,np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,-1.0]]))
         
+        self.cust = np.matmul(rotation_matrix, self.cust)
         self.pca_cust = np.matmul(self.pca,self.cust)
+        
         if self.last_msg_timestamp is not None:
             elapsed = time.time() - self.last_msg_timestamp
             if elapsed < 1 / self.frequency:
