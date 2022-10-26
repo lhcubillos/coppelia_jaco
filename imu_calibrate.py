@@ -83,7 +83,7 @@ class CalibrateImu:
         for i in range(n):
             for j in range(m):
                 pca_normalized[i,j] = (pca_transform[i,j]/norms[j])/np.sqrt(variances[j])
-        pca_dump = [pca_normalized, None]
+        pca_dump = [pca_normalized, None, 0.2]
         f = open(filename,"wb")
         pk.dump(pca_dump, f)
         f.close

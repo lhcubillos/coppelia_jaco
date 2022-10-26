@@ -37,6 +37,7 @@ class LivePlotCust:
         self.dot = None
         self.axbackground = None
         self.maxspeed = 0.2
+        self.vel_tolerance = 0.2
         self.y = 0.0
         self.x = 0.0
         self.first_time = None
@@ -58,6 +59,9 @@ class LivePlotCust:
         self.slidetext1 = None
         self.slider2 = None
         self.slidetext2 = None
+        self.slider3 = None
+        self.slidetext3 = None
+
         if self.cust[0,0] == 0:
             self.reverse = True
         else:
@@ -88,6 +92,13 @@ class LivePlotCust:
         self.slidetext2.delete("0.0","end")
         self.slidetext2.delete("0.0")
         return 'break'
+    
+    def parse3(self,event):
+        text = float(self.slidetext3.get("0.0","end").strip())
+        self.slider3.set(text)
+        self.slidetext3.delete("0.0","end")
+        self.slidetext3.delete("0.0")
+        return 'break'
         
     def press1(self):
         if self.reverse:
@@ -110,7 +121,7 @@ class LivePlotCust:
     def press4(self):
         self.accept = True
         out_f = open(self.filename[:-4]+"_cust.pkl","wb")
-        pk.dump([self.pca,self.cust],out_f)
+        pk.dump([self.pca,self.cust,self.vel_tolerance],out_f)
         print("Saved user customizations to "+self.filename[:-4]+"_cust.pkl")
         out_f.close()
         self.window.destroy()
@@ -128,10 +139,14 @@ class LivePlotCust:
         self.slider1.set(abs(self.cust[0,0])+(self.cust[0,1]))
         self.slider2 = tk.Scale(self.window,label='Sensitivity 2',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
+        self.slider3 = tk.Scale(self.window,label='Toleranc_mps',digits=3,resolution=0.00,from_=0.01,to=5.00,orient='horizontal')
+        self.slider3.set(abs(0.20))
         self.slidetext1 = tk.Text(self.window,width=10,height=1)
         self.slidetext1.bind("<Return>",self.parse1)
         self.slidetext2 = tk.Text(self.window,width=10,height=1)
         self.slidetext2.bind("<Return>",self.parse2)
+        self.slidetext3 = tk.Text(self.window,width=10,height=1)
+        self.slidetext3.bind("<Return>",self.parse3)
         
         self.button1 = tk.Button(self.window,text='Switch motions 1 and 2',command=self.press1)
         self.button2 = tk.Button(self.window,text='Reverse axis 1',command=self.press2)
@@ -142,6 +157,8 @@ class LivePlotCust:
         self.slidetext1.pack()
         self.slider2.pack()
         self.slidetext2.pack()
+        self.slider3.pack()
+        self.slidetext3.pack()
         self.button1.pack()
         self.button2.pack()
         self.button3.pack()
@@ -167,6 +184,7 @@ class LivePlotCust:
     def handle_messages(self, channel, msg):
         sense1 = float(self.slider1.get())
         sense2 = float(self.slider2.get())
+        self.vel_tolerance = float(self.slider3.get())
         
         self.cust = np.array([[sense1,0.0],[0.0,sense2]])
         
@@ -192,7 +210,7 @@ class LivePlotCust:
             msg.imu_values[2].pitch,msg.imu_values[2].roll,\
             msg.imu_values[3].pitch,msg.imu_values[3].roll
         ]).reshape(1,-1)
-            [self.x,__,self.y] = compute_velocity(self.imu_data,self.pca_cust)
+            [self.x,__,self.y] = compute_velocity(self.imu_data,self.pca_cust,self.vel_tolerance)
             self.dot.set_data(np.array(self.x), np.array(self.y))
             self.canvas.draw()
             self.window.update()
