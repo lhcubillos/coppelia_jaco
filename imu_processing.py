@@ -30,7 +30,7 @@ def compute_velocity(imu_data,pca,vel_tolerance):
 # Check if calculated velocity is within the "deadzone" tolerance; if so,
 # instructs the processing to return zero velocity
 def value_within_tolerance(velocity, vel_tolerance):
-    value = np.sqrt(np.power(velocity[0]+vel_tolerance,2) + np.power(velocity[1],2) + np.power(velocity[2]+vel_tolerance,2))
+    value = np.sqrt(np.power(velocity[0]+vel_tolerance,2) + np.power(velocity[1]+vel_tolerance,2) + np.power(velocity[2]+vel_tolerance,2))
     if value<vel_tolerance:
         return True
     return False
@@ -40,4 +40,3 @@ def value_within_tolerance(velocity, vel_tolerance):
 def get_speed(value, vel_tolerance):
     speed = np.min([np.max([abs(value) - vel_tolerance,0]), MAX_SPEED])
     return np.sign(value) * speed
-
