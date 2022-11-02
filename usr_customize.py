@@ -94,10 +94,10 @@ class LivePlotCust:
         return 'break'
     
     def parse3(self,event):
-        text = float(self.slidetext3.get("0.0","end").strip())
+        text = float(self.slidetext3.get("0.00","end").strip())
         self.slider3.set(text)
-        self.slidetext3.delete("0.0","end")
-        self.slidetext3.delete("0.0")
+        self.slidetext3.delete("0.00","end")
+        self.slidetext3.delete("0.00")
         return 'break'
         
     def press1(self):
@@ -139,7 +139,7 @@ class LivePlotCust:
         self.slider1.set(abs(self.cust[0,0])+(self.cust[0,1]))
         self.slider2 = tk.Scale(self.window,label='Sensitivity 2',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
-        self.slider3 = tk.Scale(self.window,label='Toleranc_mps',digits=3,resolution=0.00,from_=0.01,to=5.00,orient='horizontal')
+        self.slider3 = tk.Scale(self.window,label='Toleranc_mps',digits=3,resolution=0.00,from_=0.01,to=1.00,orient='horizontal')
         self.slider3.set(abs(0.20))
         self.slidetext1 = tk.Text(self.window,width=10,height=1)
         self.slidetext1.bind("<Return>",self.parse1)
