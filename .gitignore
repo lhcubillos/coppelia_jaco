@@ -140,3 +140,4 @@ cython_debug/
 # Experimental data
 *.calib
 *.pkl
+trails/

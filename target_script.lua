@@ -43,7 +43,6 @@ end
 function createPath()
     -- vel_x = sim.getFloatSignal("vel_x")
     posAlongPath = 0
-    -- changed by deepak vel_x = 0.0
     vel_x = sim.getFloatSignal("vel_x")
     vel_y = sim.getFloatSignal("vel_y")
     vel_z = sim.getFloatSignal("vel_z")

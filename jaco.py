@@ -5,6 +5,7 @@ from pynput.keyboard import Key, Listener
 from imu_processing import compute_velocity
 import sys
 import pickle as pk
+import tkinter as tk
 import signal
 import os
 
@@ -62,19 +63,43 @@ class Simulation:
         self.pca_1 = pca_load[0]
         self.pca_2 = pca_load[1]
         self.usr_cust = pca_load[2]
+	self.compute_velocity = pca_load[3]
         
         # If no usr_cust matrix present, uses identity matrix (i.e. no customization)
         if self.usr_cust is None:
-            # modified by deepak identity(2)
             self.usr_cust = np.identity(3)
 
         self.pca = np.hstack((self.pca_1, self.pca_2))
         self.pca_cust = np.matmul(self.pca,self.usr_cust)
+
+        self.imu_write_f = open(pca_filename[:-4]+"_coppelia.calib",'w')
+        self.record_imu_data = False
+        self.button1 = None
+        self.button2 = None
+        self.window = None
         
         # Prints the PCA model and usr_cust matrices to the terminal and closes .pkl file
         print(self.pca)
         print(self.usr_cust)
-        f.close() 
+        f.close()
+
+    def initialize_ui(self):
+        self.window = tk.Tk()
+        self.window.title('JACO Record IMU')
+        self.window.geometry('500x500')
+        self.button1 = tk.Button(self.window,text='Save IMU Data',command=self.press1)
+        self.button2 = tk.Button(self.window,text='Do not Save IMU Data',command=self.press2)
+        self.button1.pack()
+        self.button2.pack()
+    
+    def press1(self):
+        self.record_imu_data = True
+        self.window.destroy()
+
+    
+    def press2(self):
+        self.record_imu_data = False
+        self.window.destroy()
 
     def imu_t_callback(self, channel, imu_msg):
         # When receiving imu data, reshape it into the proper form for imu_processing.py
@@ -84,6 +109,14 @@ class Simulation:
             imu_msg.imu_values[2].pitch,imu_msg.imu_values[2].roll,\
             imu_msg.imu_values[3].pitch,imu_msg.imu_values[3].roll
         ]).reshape(1,-1)
+        if (self.record_imu_data):
+            for i in range(4):
+                imu_val = imu_msg.imu_values[i]
+                self.imu_write_f.write(str(imu_val.pitch)+","+str(imu_val.roll))
+                if i != 3:
+                    self.imu_write_f.write(",")
+            self.imu_write_f.write("\n")
+            self.imu_write_f.flush()
 
     def start(self):
         # Starts simulation
@@ -95,6 +128,7 @@ class Simulation:
         
 
     def stop(self):
+        self.imu_write_f.close()
         # When done, stop ZCM and then simulation
         self.zcmL.stop()
         self.sim.stopSimulation()
@@ -105,6 +139,8 @@ class Simulation:
         # It then advances the simulation one step; it is important that this script be 
         # stepped with the simulation to prevent input delay.
         try:
+            self.initialize_ui()
+            self.window.mainloop()
             self.start()
             while not self.should_stop:
                 try:
@@ -113,7 +149,7 @@ class Simulation:
                     
                     # If we have new IMU data, calculate the velocity:
                     if self.imu_data is not None:
-                        self.new_vel = compute_velocity(self.imu_data,self.pca_cust)
+                        self.new_vel = compute_velocity(self.imu_data,self.pca_cust,self.compute_velocity)
                     
                     # If that velocity is not zero and the process is not shutting down,
                     # compress it and inject it into CS:

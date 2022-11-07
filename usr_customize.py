@@ -4,7 +4,6 @@ from matplotlib import projections, pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
 NavigationToolbar2Tk)
 import numpy as np
-from sklearn.metrics import precision_recall_curve
 from zerocm import ZCM
 import sys
 import pickle as pk
@@ -40,6 +39,7 @@ class LivePlotCust:
         self.dot2 = None
         self.axbackground = None
         self.maxspeed = 0.2
+	self.vel_tolerance = 0.2
         self.z = 0.0
         self.y = 0.0
         self.x = 0.0
@@ -50,7 +50,6 @@ class LivePlotCust:
         f = open(filename,"rb")
         pca_load = pk.load(f)
         self.pca_1 = pca_load[0]
-        # self.cust_1 = pca_load[1]
         self.pca_2 = pca_load[1]
         self.cust = pca_load[2]
         if self.cust is None:

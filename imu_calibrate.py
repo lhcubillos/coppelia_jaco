@@ -93,7 +93,7 @@ class CalibrateImu:
         pca_normalized_1 = self.getPcaNormalized(data_1, 2)
         pca_normalized_2 = self.getPcaNormalized(data_2, 1)
 
-        pca_dump = [pca_normalized_1, pca_normalized_2, None]
+        pca_dump = [pca_normalized_1, pca_normalized_2, None, 0.2]
         f = open(filename,"wb")
         pk.dump(pca_dump, f)
         f.close
