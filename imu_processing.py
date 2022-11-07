@@ -23,9 +23,9 @@ def compute_velocity(imu_data,pca,vel_tolerance):
     # Arbitratily deciding component 1 is Z, component 2 is X
     if imu_data is not None:
         # Z component
-        vel[2] = get_speed(imu_vel_2[0], vel_tolerance)
+        vel[1] = get_speed(imu_vel_2[0], vel_tolerance)
         # Y component
-        vel[1] = get_speed(imu_vel_1[1][0], vel_tolerance)
+        vel[2] = get_speed(imu_vel_1[1][0], vel_tolerance)
         # X component
         vel[0] = get_speed(imu_vel_1[0][0], vel_tolerance)
         # For smoother control, tolerance considers total velocity, not components

@@ -241,11 +241,11 @@ class LivePlotCust:
         
         self.slider1 = tk.Scale(self.slider_axis1_frame_nested,label='Sensitivity X',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider1.set(abs(self.cust[0,0])+(self.cust[0,1]))
-        self.slider2 = tk.Scale(self.slider_axis2_frame_nested,label='Sensitivity Y',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider2 = tk.Scale(self.slider_axis2_frame_nested,label='Sensitivity Z',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
-        self.slider3 = tk.Scale(self.slider_axis3_frame_nested,label='Sensitivity Z',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider3 = tk.Scale(self.slider_axis3_frame_nested,label='Sensitivity Y',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider3.set(abs(self.cust[2,2]))
-        self.slider4 = tk.Scale(self.rotate_axes_frame,label='Deg. Rotation Axes X and Y',digits=3,resolution=0.0,from_=-180.0,to=180.0,orient='horizontal',length=200)
+        self.slider4 = tk.Scale(self.rotate_axes_frame,label='Deg. Rotation Axes X and Z',digits=3,resolution=0.0,from_=-180.0,to=180.0,orient='horizontal',length=200)
         self.slider4.set(abs(0.0))
         self.slider5 = tk.Scale(self.vel_tolerance_frame,label='Cutoff Velocity in m/s',digits=4,resolution=0.000,from_=0.001,to=1.000,orient='horizontal',length=200)
         self.slider5.set(abs(0.200))
@@ -260,10 +260,10 @@ class LivePlotCust:
         self.slidetext5 = tk.Text(self.vel_tolerance_frame,width=15,height=1)
         self.slidetext5.bind("<Return>",self.parse5)
         
-        self.button1 = tk.Button(self.switch_button_frame,text='Switch motions X and Y',command=self.press1)
+        self.button1 = tk.Button(self.switch_button_frame,text='Switch motions X and Z',command=self.press1)
         self.button2 = tk.Button(self.switch_axis1_frame_nested,text='Reverse axis X',command=self.press2)
-        self.button3 = tk.Button(self.switch_axis2_frame_nested,text='Reverse axis Y',command=self.press3)
-        self.button4 = tk.Button(self.switch_axis3_frame_nested,text='Reverse axis Z',command=self.press4)
+        self.button3 = tk.Button(self.switch_axis2_frame_nested,text='Reverse axis Z',command=self.press3)
+        self.button4 = tk.Button(self.switch_axis3_frame_nested,text='Reverse axis Y',command=self.press4)
         self.button5 = tk.Button(self.accept_frame_nested,text='Accept',command=self.press5)
         self.button6 = tk.Button(self.cancel_frame_nested,text='Cancel',command=self.press6)
         self.slider1.pack()
@@ -320,14 +320,14 @@ class LivePlotCust:
         (self.dot1,) = self.ax[1].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
         self.ax[1].set_xlabel('x')
         self.ax[1].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
-        self.ax[1].set_ylabel('y')
+        self.ax[1].set_ylabel('z')
         self.ax[1].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
 
         # setup plot for XZ plane - SIDE view of motion
         (self.dot2,) = self.ax[0].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
         self.ax[0].set_xlabel('')
         self.ax[0].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
-        self.ax[0].set_ylabel('z')
+        self.ax[0].set_ylabel('y')
         self.ax[0].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
         
         #self.axbackground = self.fig.canvas.copy_from_bbox(self.ax.bbox)
@@ -381,8 +381,8 @@ class LivePlotCust:
         ]).reshape(1,-1)
             [self.x,self.y,self.z] = compute_velocity(self.imu_data,self.pca_cust,self.vel_tolerance)
 
-            self.dot2.set_data(np.array(0.0), np.array(self.z))
-            self.dot1.set_data(np.array(self.x), np.array(self.y))
+            self.dot2.set_data(np.array(0.0), np.array(self.y))
+            self.dot1.set_data(np.array(self.x), np.array(self.z))
             self.canvas.draw()
             self.window.update()
     
