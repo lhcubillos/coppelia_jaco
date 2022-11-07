@@ -63,7 +63,7 @@ class Simulation:
         self.pca_1 = pca_load[0]
         self.pca_2 = pca_load[1]
         self.usr_cust = pca_load[2]
-	self.compute_velocity = pca_load[3]
+        self.compute_velocity = pca_load[3]
         
         # If no usr_cust matrix present, uses identity matrix (i.e. no customization)
         if self.usr_cust is None:

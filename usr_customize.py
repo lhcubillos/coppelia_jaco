@@ -39,7 +39,7 @@ class LivePlotCust:
         self.dot2 = None
         self.axbackground = None
         self.maxspeed = 0.2
-	self.vel_tolerance = 0.2
+        self.vel_tolerance = 0.2
         self.z = 0.0
         self.y = 0.0
         self.x = 0.0
@@ -55,9 +55,9 @@ class LivePlotCust:
         if self.cust is None:
             self.cust = np.identity(3)
         f.close
-        
+
         self.pca = np.hstack((self.pca_1, self.pca_2))
-        self.pca_cust = np.matmul(self.pca,self.cust)        
+        self.pca_cust = np.matmul(self.pca,self.cust)
 
         self.canvas = None
         self.window = None
@@ -70,6 +70,7 @@ class LivePlotCust:
         self.custom_frame_nested = None
 
         self.switch_button_frame = None
+        self.vel_tolerance_frame = None
         self.rotate_axes_frame = None
 
         self.axis_1_frame = None
@@ -104,6 +105,8 @@ class LivePlotCust:
         self.slidetext3 = None
         self.slider4 = None
         self.slidetext4 = None
+        self.slider5 = None
+        self.slidetext5 = None
 
         if self.cust[0,0] == 0:
             self.reverse = True
@@ -153,6 +156,13 @@ class LivePlotCust:
         self.slidetext4.delete("0.0","end")
         self.slidetext4.delete("0.0")
         return 'break'
+
+    def parse5(self,event):
+        text = float(self.slidetext5.get("0.000","end").strip())
+        self.slider4.set(text)
+        self.slidetext4.delete("0.000","end")
+        self.slidetext4.delete("0.000")
+        return 'break'
         
     def press1(self):
         if self.reverse:
@@ -181,7 +191,7 @@ class LivePlotCust:
     def press5(self):
         self.accept = True
         out_f = open(self.filename[:-4]+"_cust.pkl","wb")
-        pk.dump([self.pca_1, self.pca_2, self.cust],out_f)
+        pk.dump([self.pca_1, self.pca_2, self.cust, self.vel_tolerance],out_f)
         print("Saved user customizations to "+self.filename[:-4]+"_cust.pkl")
         out_f.close()
         self.window.destroy()
@@ -202,6 +212,7 @@ class LivePlotCust:
         self.custom_frame_nested = tk.Frame(master=self.custom_frame)
 
         self.switch_button_frame = tk.Frame(master=self.custom_frame)
+        self.vel_tolerance_frame = tk.Frame(master=self.custom_frame)
         self.rotate_axes_frame = tk.Frame(master=self.custom_frame)
 
         self.axis_1_frame = tk.Frame(master=self.custom_frame)
@@ -228,14 +239,16 @@ class LivePlotCust:
         self.cancel_frame = tk.Frame(self.accept_cancel_frame)
         self.cancel_frame_nested = tk.Frame(self.cancel_frame)
         
-        self.slider1 = tk.Scale(self.slider_axis1_frame_nested,label='Sensitivity 1',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider1 = tk.Scale(self.slider_axis1_frame_nested,label='Sensitivity X',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider1.set(abs(self.cust[0,0])+(self.cust[0,1]))
-        self.slider2 = tk.Scale(self.slider_axis2_frame_nested,label='Sensitivity 2',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider2 = tk.Scale(self.slider_axis2_frame_nested,label='Sensitivity Y',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
-        self.slider3 = tk.Scale(self.slider_axis3_frame_nested,label='Sensitivity 3',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider3 = tk.Scale(self.slider_axis3_frame_nested,label='Sensitivity Z',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider3.set(abs(self.cust[2,2]))
-        self.slider4 = tk.Scale(self.rotate_axes_frame,label='Rotation Angle(Axes 1 and 2)',digits=3,resolution=0.0,from_=-180.0,to=180.0,orient='horizontal',length=200)
+        self.slider4 = tk.Scale(self.rotate_axes_frame,label='Deg. Rotation Axes X and Y',digits=3,resolution=0.0,from_=-180.0,to=180.0,orient='horizontal',length=200)
         self.slider4.set(abs(0.0))
+        self.slider5 = tk.Scale(self.vel_tolerance_frame,label='Cutoff Velocity in m/s',digits=4,resolution=0.000,from_=0.001,to=1.000,orient='horizontal',length=200)
+        self.slider5.set(abs(0.200))
         self.slidetext1 = tk.Text(self.slider_axis1_frame_nested,width=10,height=1)
         self.slidetext1.bind("<Return>",self.parse1)
         self.slidetext2 = tk.Text(self.slider_axis2_frame_nested,width=10,height=1)
@@ -244,11 +257,13 @@ class LivePlotCust:
         self.slidetext3.bind("<Return>",self.parse3)
         self.slidetext4 = tk.Text(self.rotate_axes_frame,width=15,height=1)
         self.slidetext4.bind("<Return>",self.parse4)
+        self.slidetext5 = tk.Text(self.vel_tolerance_frame,width=15,height=1)
+        self.slidetext5.bind("<Return>",self.parse5)
         
-        self.button1 = tk.Button(self.switch_button_frame,text='Switch motions 1 and 2',command=self.press1)
-        self.button2 = tk.Button(self.switch_axis1_frame_nested,text='Reverse axis 1',command=self.press2)
-        self.button3 = tk.Button(self.switch_axis2_frame_nested,text='Reverse axis 2',command=self.press3)
-        self.button4 = tk.Button(self.switch_axis3_frame_nested,text='Reverse axis 3',command=self.press4)
+        self.button1 = tk.Button(self.switch_button_frame,text='Switch motions X and Y',command=self.press1)
+        self.button2 = tk.Button(self.switch_axis1_frame_nested,text='Reverse axis X',command=self.press2)
+        self.button3 = tk.Button(self.switch_axis2_frame_nested,text='Reverse axis Y',command=self.press3)
+        self.button4 = tk.Button(self.switch_axis3_frame_nested,text='Reverse axis Z',command=self.press4)
         self.button5 = tk.Button(self.accept_frame_nested,text='Accept',command=self.press5)
         self.button6 = tk.Button(self.cancel_frame_nested,text='Cancel',command=self.press6)
         self.slider1.pack()
@@ -259,6 +274,8 @@ class LivePlotCust:
         self.slidetext3.pack()
         self.slider4.pack()
         self.slidetext4.pack()
+        self.slider5.pack()
+        self.slidetext5.pack()
         self.button1.pack()
         self.button2.pack()
         self.button3.pack()
@@ -270,6 +287,7 @@ class LivePlotCust:
         self.custom_frame_nested.pack(expand=True)
 
         self.switch_button_frame.pack(expand=True, padx=10.0, pady=10.0)
+        self.vel_tolerance_frame.pack(expand=True, padx=10.0, pady=10.0)
         self.rotate_axes_frame.pack(expand=True, padx=10.0, pady=10.0)
 
         self.axis_1_frame.pack(fill=tk.BOTH, expand=True)
@@ -300,9 +318,9 @@ class LivePlotCust:
 
         # setup plot for XY plane - TOP view of motion
         (self.dot1,) = self.ax[1].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
-        self.ax[1].set_xlabel('y')
+        self.ax[1].set_xlabel('x')
         self.ax[1].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
-        self.ax[1].set_ylabel('x')
+        self.ax[1].set_ylabel('y')
         self.ax[1].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
 
         # setup plot for XZ plane - SIDE view of motion
@@ -327,6 +345,7 @@ class LivePlotCust:
         sense1 = float(self.slider1.get())
         sense2 = float(self.slider2.get())
         sense3 = float(self.slider3.get())
+        self.vel_tolerance = float(self.slider5.get())
 
         rotation = float(self.slider4.get())
         rotation_rad = np.deg2rad(rotation)
@@ -360,10 +379,10 @@ class LivePlotCust:
             msg.imu_values[2].pitch,msg.imu_values[2].roll,\
             msg.imu_values[3].pitch,msg.imu_values[3].roll
         ]).reshape(1,-1)
-            [self.x,self.y,self.z] = compute_velocity(self.imu_data,self.pca_cust)
+            [self.x,self.y,self.z] = compute_velocity(self.imu_data,self.pca_cust,self.vel_tolerance)
 
             self.dot2.set_data(np.array(0.0), np.array(self.z))
-            self.dot1.set_data(np.array(self.y), np.array(self.x))
+            self.dot1.set_data(np.array(self.x), np.array(self.y))
             self.canvas.draw()
             self.window.update()
     
