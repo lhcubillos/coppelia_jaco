@@ -24,10 +24,14 @@ def compute_velocity(imu_data,pca,vel_tolerance):
     if imu_data is not None:
         # Z component
         vel[1] = get_speed(imu_vel_2[0], vel_tolerance)
-        # Y component
-        vel[2] = get_speed(imu_vel_1[1][0], vel_tolerance)
-        # X component
-        vel[0] = get_speed(imu_vel_1[0][0], vel_tolerance)
+        if (abs(imu_vel_1[1][0]) > abs(imu_vel_1[0][0])):
+            # Y component
+            vel[2] = get_speed(imu_vel_1[1][0], vel_tolerance)
+            vel[0] = 0.0
+        else:
+            # X component
+            vel[0] = get_speed(imu_vel_1[0][0], vel_tolerance)
+            vel[2] = 0.0
         # For smoother control, tolerance considers total velocity, not components
         if value_within_tolerance(vel, vel_tolerance):
             vel[2] = 0.0
