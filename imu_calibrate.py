@@ -6,6 +6,7 @@ import sys
 import pickle as pk
 import tkinter as tk
 import subprocess
+from threading import *
 
 from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
@@ -35,6 +36,7 @@ class CalibrateImu:
         # initialize runtime parameters
         self.first_time = None        
         self.running = False
+        self.cancelled = False
         self.start_time = None
         self.stop_time = 60.0
         self.last_msg_timestamp = None
@@ -50,6 +52,10 @@ class CalibrateImu:
         # parse UI text input
         self.runCalib()
         return 'break'
+    
+    def threading(self):
+        t1=Thread(target=self.runCalib)
+        t1.start()
         
     def runCalib(self):
         # upon clicking the calibrate button, disables UI
@@ -63,12 +69,16 @@ class CalibrateImu:
         try:
             while not self.should_stop:
                 if (time.time() - self.start_time) >= self.stop_time:
-                    self.should_stop = True  
+                    self.should_stop = True 
         except KeyboardInterrupt:
             self.should_stop = True
         self.zcm.stop()
         self.f.write("\n")
         self.f.close()
+        if self.cancelled:
+            self.cancelled = False
+            self.window.destroy()
+            return
         
         # after data collection, process data via PCA to obtain first two principle components
         # then, build the PCA transformation matrix, normalize/center them, and save to filename.pkl
@@ -100,6 +110,8 @@ class CalibrateImu:
             self.window.destroy()
         else:
             self.should_stop = True
+            self.cancelled = True
+            
         
     def init_process(self,filename):
     	# Open file to save to
@@ -113,13 +125,13 @@ class CalibrateImu:
         self.text = tk.Text(self.window,width=10,height=1)
         self.text.insert("0.0","60.0")
         self.text.bind("<Return>",self.parseText)
-        self.button = tk.Button(self.window,text='Start Calibration',command=self.runCalib)
+        self.button = tk.Button(self.window,text='Start Calibration',command=self.threading)
         self.button2 = tk.Button(self.window,text='Cancel',command=self.cancelCalib)
         self.label.pack()
         self.text.pack()
         self.button.pack()
         self.button2.pack()
-        self.window.geometry('320x100')
+        self.window.geometry('800x500')
         # ZCM
         self.zcm.subscribe(self.channel, imus_t, self.handle_messages)
 
@@ -156,4 +168,3 @@ if __name__ == "__main__":
     print(filename)
     calibrate = CalibrateImu("IMU")
     calibrate.run(filename)
-
