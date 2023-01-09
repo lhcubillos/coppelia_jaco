@@ -7,7 +7,7 @@ class PlotData:
     def __init__(self, folderpath):
         self.file = None
         self.folder_path = folderpath
-        self.patient_id = ['natalia', 'anna', 'qi', 'stellar']
+        self.patient_id = ['AG121222', 'AS121222', 'HZ121222', 'JM121422']
         self.string_to_match = ['pre_test', 'training_1_1', 'training_1_2', 'training_1_3', 'training_1_4', 'mid_test', 
         'training_2_1', 'training_2_2', 'training_2_3', 'training_2_4', 'post_test']
         self.negative_key = '_settings.tdt'
@@ -26,6 +26,13 @@ class PlotData:
         self.target_reached = 1
         self.normalized_dist_avg = 0.0
         self.avg_path = []
+        self.header = ['patient'] + self.string_to_match
+        self.time_data_csv = open(folderpath + '/2d_time_data.csv', 'w')
+        self.time_data_csv_writer = csv.writer(self.time_data_csv)
+        self.time_data_csv_writer.writerow(self.header)
+        self.path_data_csv = open(folderpath + '/2d_path_data.csv', 'w')
+        self.path_data_csv_writer = csv.writer(self.path_data_csv)
+        self.path_data_csv_writer.writerow(self.header)
     
     def start(self):
         fig_time = go.Figure()
@@ -86,10 +93,15 @@ class PlotData:
                         self.normalized_dist_avg =0.0
             # time
             fig_time.add_trace(go.Scatter(x=self.string_to_match, y=self.time_taken, name=patient+"_time"))
+            self.time_data_csv_writer.writerow([patient] + list(map(str, self.time_taken)))
             self.time_taken = []
             # path
             fig_path.add_trace(go.Scatter(x=self.string_to_match, y=self.avg_path, name=patient+"_path"))
+            self.path_data_csv_writer.writerow([patient] + list(map(str, self.avg_path)))
             self.avg_path = []
+
+        self.time_data_csv.close()
+        self.path_data_csv.close()
         # time
         fig_time.update_layout(hovermode='x unified')
         fig_time.show()
