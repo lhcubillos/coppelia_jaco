@@ -1,0 +1,168 @@
+function sysCall_init()
+    objectToFollowPath=sim.getObjectHandle(sim.handle_self)
+    targetHandle=sim.getObjectHandle("/Move_target")
+    gripperHandle=sim.getScriptHandle(1,"/Jaco/JacoHand")
+    orientation = sim.getObjectQuaternion(objectToFollowPath,-1)
+    --orientation = {-0.7071068287, 0, 0, 0.7071068287}
+    velocity= nil
+    posAlongPath = 0
+    previousSimulationTime = 0
+    initial_point = nil
+    distance = 5.0
+    vel_norm1 = nil
+    corout = coroutine.create(coroutineMain)
+    sim.setFloatSignal("touch_frame",0)
+    lastRand=0
+    numberTargets = 8
+    targetsToEnd = 10
+    targetsTouched = 0
+    stall_time = 0.5
+    velocity_table = {0.0,0.0,0.0}
+    runIk = 0
+    target_positions = {}
+    shuffled = 0
+    current_stall_time = sim.getSystemTimeInMs(-2)
+end
+
+function sysCall_actuation()
+    if coroutine.status(corout)~='dead' then
+        local ok,errorMsg=coroutine.resume(corout)
+        if errorMsg then
+            error(debug.traceback(corout,errorMsg),2)
+        end
+    end
+end
+
+function coroutineMain()
+    sim.setThreadAutomaticSwitch(false)
+    -- create path to point given by xyz
+    while true do
+        local t=sim.getSimulationTime()
+        runIk = sim.getFloatSignal('run_ik')
+        if runIk == 0 then
+            createPath()
+        end
+        if initial_point ~= nil and vel_norm1 ~= nil then
+            -- Check if it works without checking against length.
+            posAlongPath = posAlongPath + velocity * (t - previousSimulationTime)
+            local pos = (initial_point + posAlongPath * vel_norm1):t():totable()[1]
+            -- Check if position is more than 0.90m from the arm's base
+            local post_dist = math.sqrt(pos[1]^2 + pos[2]^2 + (0.90 - pos[3])^2)
+            if post_dist > 0.90 then
+                posAlongPath = posAlongPath - velocity * (t - previousSimulationTime)
+                pos = (initial_point + posAlongPath * vel_norm1):t():totable()[1]
+            end
+            -- Go to position and orientation
+            sim.setObjectPosition(objectToFollowPath,-1,pos)
+            sim.setObjectQuaternion(objectToFollowPath,-1,orientation)
+        end
+        previousSimulationTime = t
+        -- Switch to main thread
+        sim.switchThread()
+    end
+end
+
+function shuffle (arr)
+    for i = 1, #arr - 1 do
+      local j = math.random(i, #arr)
+      arr[i], arr[j] = arr[j], arr[i]
+    end
+end
+
+function moveTarget(force)
+    --0.35<y<0.6,0.75<z<1.5
+    local tipPosition = Vector3(sim.getObjectPosition(objectToFollowPath,-1))
+    local targetPosition = Vector3(sim.getObjectPosition(targetHandle,-1))
+    local distance = math.sqrt((tipPosition[3]-targetPosition[3])^2+(tipPosition[1]-targetPosition[1])^2)
+    local scale = sim.getFloatSignal('target_scale')
+    stall_time = sim.getFloatSignal('stall_time')
+    numberTargets = sim.getFloatSignal('num_target')
+    center_x = sim.getFloatSignal('center_x')
+    center_y = sim.getFloatSignal('center_y')
+    center_z = sim.getFloatSignal('center_z')
+    target_pos_theta = sim.getStringSignal('target_pos_theta')
+    
+    if scale == nil then
+        scale = 1
+    end
+    
+    if (shuffled == 0) then
+        if (target_pos_theta ~= "") and (target_pos_theta ~= nil) then
+            i = 1
+            for match in target_pos_theta:gmatch("([%d%.%+%-]+),?") do
+                target_positions[i] = math.rad(tonumber(match))
+                i = i+1
+            end
+            number_of_positions = #target_positions
+            shuffle(target_positions)
+            print(target_positions)
+            shuffled = 1
+        elseif (type(numberTargets) == "number") then
+            for i = 1, numberTargets do
+                target_positions[i] = (i/numberTargets)*2*math.pi
+                local width = 2*math.pi / numberTargets
+                target_positions[i] = math.floor(target_positions[i] / width)
+                target_positions[i] = target_positions[i] * width
+            end
+            number_of_positions = numberTargets
+            shuffle(target_positions)
+            print(target_positions)
+            shuffled = 1
+        end
+    end
+
+    if distance < 0.05*scale then
+        if sim.getSystemTimeInMs(-2)-current_stall_time >= (stall_time*1000) then
+            sim.setFloatSignal("touch_frame",1)
+            targetsTouched = targetsTouched+1
+            print("here")
+
+            targetsToEnd = sim.getFloatSignal("targets_to_end")
+        
+            if targetsTouched == targetsToEnd then
+                sim.stopSimulation()
+            end
+
+            local pos_rand = target_positions[(targetsTouched%number_of_positions)+1]
+            print((targetsTouched%number_of_positions)+1)
+            print(targetsTouched)
+            print(number_of_positions)
+            local targetDistance = sim.getFloatSignal('target_distance')
+            newPosition = {center_x + math.cos(pos_rand+math.pi/2)*targetDistance,
+			center_y,
+			center_z + math.sin(pos_rand+math.pi/2)*targetDistance}
+            print(newPosition)
+            sim.setObjectPosition(targetHandle,-1,newPosition)
+        end
+        sim.callScriptFunction("openHand",gripperHandle)
+    else
+        current_stall_time = sim.getSystemTimeInMs(-2)
+    end
+end
+
+function createPath()
+    -- vel_x = sim.getFloatSignal("vel_x")
+    posAlongPath = 0
+    local velocity_signal = sim.waitForSignal('velocity')
+    velocity_table = sim.unpackFloatTable(velocity_signal)
+    -- print(velocity_table)
+    vel_x = velocity_table[1]
+    vel_y = velocity_table[2]
+    vel_z = velocity_table[3]
+
+    -- Set posAlongPath to 0
+    local curr_pos = Vector3(sim.getObjectPosition(objectToFollowPath, -1))
+    -- Set x position zero
+    -- curr_pos[1] = 0.0
+    if vel_x == 0.0 and vel_y == 0.0 and vel_z == 0.0 then
+        velocity = 0.0
+        vel_norm1 = 0.0
+        initial_point = curr_pos:copy()
+        return
+    end
+    local vel = Vector3({vel_x,vel_y,vel_z})
+    velocity = vel:norm()
+    vel_norm1 = vel / velocity
+    initial_point = curr_pos:copy()
+    moveTarget(0)
+end

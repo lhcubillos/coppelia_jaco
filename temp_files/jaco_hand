@@ -1,0 +1,111 @@
+-- See the end of the script for instructions on how to do efficient grasping
+function sysCall_init() 
+    modelHandle=sim.getObject('.')
+    j0=sim.getObject("./fingers12_motor1")
+    j1=sim.getObject("./fingers12_motor2")
+    j2=sim.getObject("./finger3_motor1")
+    j3=sim.getObject("./finger3_motor2")
+    closingVel=-0.04
+    closing=false
+end
+
+function sysCall_sensing()
+    local s=sim.getObjectSelection()
+    local show=(s and #s==1 and s[1]==modelHandle)
+    if show then
+        if not ui then
+            local xml =[[<ui title="xxxx" closeable="false" placement="relative" layout="form">
+                    <button id="1" text="open" checkable="true" checked="true" auto-exclusive="true" on-click="openClicked"/>
+                    <button id="2" text="close" checkable="true" auto-exclusive="true" on-click="closeClicked"/>
+            </ui>]]
+            ui=simUI.create(xml)
+            if uiPos then
+                simUI.setPosition(ui,uiPos[1],uiPos[2])
+            else
+                uiPos={}
+                uiPos[1],uiPos[2]=simUI.getPosition(ui)
+            end
+            simUI.setTitle(ui,sim.getObjectAlias(modelHandle,1))
+            simUI.setButtonPressed(ui,1,not closing)
+            simUI.setButtonPressed(ui,2,closing)
+        end
+    else
+        if ui then
+            uiPos[1],uiPos[2]=simUI.getPosition(ui)
+            simUI.destroy(ui)
+            ui=nil
+        end
+    end
+end
+
+function openClicked(ui,id)
+    sim.setJointTargetVelocity(j0,-closingVel)
+    sim.setJointTargetVelocity(j1,-closingVel)
+    sim.setJointTargetVelocity(j2,-closingVel)
+    sim.setJointTargetVelocity(j3,-closingVel)
+    closing=false
+end
+
+function closeClicked(ui,id)
+    sim.setJointTargetVelocity(j0,closingVel)
+    sim.setJointTargetVelocity(j1,closingVel)
+    sim.setJointTargetVelocity(j2,closingVel)
+    sim.setJointTargetVelocity(j3,closingVel)
+    closing=true
+end
+
+function closeHand()
+    sim.setJointTargetVelocity(j0,closingVel)
+    sim.setJointTargetVelocity(j1,closingVel)
+    sim.setJointTargetVelocity(j2,closingVel)
+    sim.setJointTargetVelocity(j3,closingVel)
+    closing=true
+end
+
+function openHand()
+    sim.setJointTargetVelocity(j0,-closingVel)
+    sim.setJointTargetVelocity(j1,-closingVel)
+    sim.setJointTargetVelocity(j2,-closingVel)
+    sim.setJointTargetVelocity(j3,-closingVel)
+    closing=false
+end
+
+-- You have basically 2 alternatives to grasp an object:
+--
+-- 1. You try to grasp it in a realistic way. This is quite delicate and sometimes requires
+--    to carefully adjust several parameters (e.g. motor forces/torques/velocities, friction
+--    coefficients, object masses and inertias)
+--
+-- 2. You fake the grasping by attaching the object to the gripper via a connector. This is
+--    much easier and offers very stable results.
+--
+-- Alternative 2 is explained hereafter:
+--
+--
+-- a) In the initialization phase, retrieve some handles:
+-- 
+-- connector=sim.getObject('./attachPoint')
+-- objectSensor=sim.getObject('./attachProxSensor')
+
+-- b) Before closing the gripper, check which dynamically non-static and respondable object is
+--    in-between the fingers. Then attach the object to the gripper:
+--
+-- index=0
+-- while true do
+--     shape=sim.getObjects(index,sim.object_shape_type)
+--     if (shape==-1) then
+--         break
+--     end
+--     if (sim.getObjectInt32Param(shape,sim.shapeintparam_static)==0) and (sim.getObjectInt32Param(shape,sim.shapeintparam_respondable)~=0) and (sim.checkProximitySensor(objectSensor,shape)==1) then
+--         -- Ok, we found a non-static respondable shape that was detected
+--         attachedShape=shape
+--         -- Do the connection:
+--         sim.setObjectParent(attachedShape,connector,true)
+--         break
+--     end
+--     index=index+1
+-- end
+
+-- c) And just before opening the gripper again, detach the previously attached shape:
+--
+-- sim.setObjectParent(attachedShape,-1,true)
