@@ -1,0 +1,89 @@
+function sysCall_init()
+    -- Build a kinematic chain and 2 IK groups (undamped and damped) inside of the IK plugin environment,
+    -- based on the kinematics of the robot in the scene:
+    -- There is a simple way, and a more elaborate way (but which gives you more options/flexibility):
+    local thisObject=sim.getObjectAssociatedWithScript(sim.handle_self)
+    local thisScript=sim.getScriptAssociatedWithObject(thisObject)
+    sim.setInt32Signal('Script1Handle',thisScript)
+    targetHandle = sim.getScriptHandle(1,'Jaco_target')
+    -- Simple way:
+    local simBase=sim.getObjectHandle('Jaco')
+    simTip=sim.getObjectHandle('Jaco_tip')
+    
+    local simTarget=sim.getObjectHandle('Jaco_target')
+    -- create an IK environment:
+    ikEnv=simIK.createEnvironment()
+    -- create an IK group: 
+    print(ikEnv) 
+    ikGroup_undamp=simIK.createIkGroup(ikEnv)
+    -- sets its resolution method to jacobian transpose: 
+    simIK.setIkGroupCalculation(ikEnv,ikGroup_undamp,simIK.method_undamped_pseudo_inverse,0,6)
+    -- create an IK element based on the scene content: 
+    __, sim2ikUndamp = simIK.addIkElementFromScene(ikEnv,ikGroup_undamp,simBase,simTip,simTarget,simIK.constraint_pose)
+    
+    ikGroup_jaco=simIK.createIkGroup(ikEnv)
+    print(ikGroup_jaco)
+    -- sets its resolution method to jacobian transpose: 
+    simIK.setIkGroupCalculation(ikEnv,ikGroup_jaco,simIK.method_damped_least_squares,0.03,300)
+    -- create an IK element based on the scene content: 
+    __, sim2ikJaco = simIK.addIkElementFromScene(ikEnv,ikGroup_jaco,simBase,simTip,simTarget,simIK.constraint_pose)
+    --simIK.setIkElementConstraints(ikEnv,ikGroup_jaco,sim2ikJaco[simTip]+simIK.handleflag_tipdummy,15)
+    -- create another IK group: 
+    ikGroup_damped=simIK.createIkGroup(ikEnv)
+    -- set its resolution method to damped: 
+    simIK.setIkGroupCalculation(ikEnv,ikGroup_damped,simIK.method_damped_least_squares,0.1,99)
+    -- create an IK element based on the scene content: 
+    __, sim2ikDamp = simIK.addIkElementFromScene(ikEnv,ikGroup_damped,simBase,simTip,simTarget,simIK.constraint_pose) 
+    simIK.setIkElementConstraints(ikEnv,ikGroup_damped,sim2ikDamp[simTip]+simIK.handleflag_tipdummy,27)
+    
+    simIK.applyIkEnvironmentToScene(ikEnv,ikGroup_jaco)
+    runIK = 0
+end
+
+function onUiClose()
+    
+end
+
+function sysCall_actuation()
+    -- There is a simple way, and a more elaborate way (but which gives you more options/flexibility):
+    
+    -- Simple way:
+    -- try to solve with the jacobian transpose method:
+    sim.callScriptFunction('moveTarget',targetHandle,0)
+    runIk = sim.getFloatSignal('run_ik')
+    
+    --if simIK.applyIkEnvironmentToScene(ikEnv,ikGroup_undamp,true)==simIK.result_fail then 
+         -- the position/orientation could not be reached.
+         -- try to solve with the damped method:
+    if runIk == 0 then
+        if simIK.applyIkEnvironmentToScene(ikEnv,ikGroup_jaco)==simIK.result_fail then
+            simIK.applyIkEnvironmentToScene(ikEnv,ikGroup_damped)
+        end
+    end
+         -- We display a IK failure report message: 
+         --if not ikFailedReportHandle then 
+         --    ikFailedReportHandle=sim.displayDialog("IK failure report","IK solver failed.",
+         --        sim.dlgstyle_message,false,"",nil,{1,0.7,0,0,0,0})
+         --end
+     --else
+         --if ikFailedReportHandle then
+         	-- We close any report message about IK failure:
+             --sim.endDialog(ikFailedReportHandle) 
+             --ikFailedReportHandle=nil
+         --end
+     --end
+end 
+
+--function get_jacobian()
+    --return 'hola'
+    --print("function called")
+    --simIK.computeJacobian(ikEnv, ikGroup_undamped, 0)
+    --jacobian = simIK.getJacobian(ikEnv, ikGroup_undamped)
+    --return {},jacobian
+--end
+
+function sysCall_cleanup()
+	-- erase the IK environment: 
+    simIK.eraseEnvironment(ikEnv) 
+    sim.clearStringSignal('velocity')
+end 

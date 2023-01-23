@@ -1,0 +1,220 @@
+function updatePatient(ui,id,name)
+	patientName = name
+end
+
+function updateTrial(ui,id,val)
+	trial = val
+end
+
+function updateX(ui,id,val)
+	xPos = tonumber(val)
+end
+
+function updateY(ui,id,val)
+	yPos = tonumber(val)
+end
+
+function updateZ(ui,id,val)
+	zPos = tonumber(val)
+end
+
+function updateTargets(ui,id,val)
+    num_target = math.max(2,math.floor(tonumber(val)+.4))
+end
+
+function updateScale(ui,id,val)
+    scaleFactor = (val/0.1)
+end
+
+function updateCircle(ui,id,val)
+    targetDistance = tonumber(val)
+end
+
+function updateTotalTargets(ui,id,val)
+    print(val)
+    targets_to_end = math.max(1,math.floor(tonumber(val)+.4))
+    print(targets_to_end)
+end
+
+function updateStallTime(ui,id,val)
+    stall_time = tonumber(val)
+end
+
+function UpdateTargetAngles(ui, id, val)
+    target_pos_theta = val
+end
+
+function DisplayAngles(ui, id)
+    target_positions = {}
+    for i = 1, num_target do
+        target_positions[i] = (i/num_target)*2*math.pi
+        local width = 2*math.pi / num_target
+        target_positions[i] = math.floor(target_positions[i] / width)
+        target_positions[i] = math.deg(target_positions[i] * width)
+    end
+    target_angle_txt = target_positions[1]
+    if num_target > 1 then
+        for i = 2, num_target do
+            target_angle_txt = target_angle_txt .. ", " .. target_positions[i]
+        end
+    end
+    simUI.setEditValue(ui,140798,target_angle_txt)
+end
+
+function confirmJaco(ui,id)
+    if (patientName == "") or (patientName == nil) then
+        patientName = "test"
+    end
+	filename = patientName.."_"..trial
+    print(filename)
+    sim.setObjectPosition(targetHandle,-1,{xPos,yPos,zPos})
+    file=io.open("./jaco_data/"..filename..'.tdt', "w+")
+
+    sim.setFloatSignal("num_target",num_target)
+    sim.setFloatSignal("stall_time",stall_time)
+    sim.setFloatSignal("targets_to_end",targets_to_end)
+    sim.setFloatSignal("target_distance",targetDistance)
+    sim.setFloatSignal("target_scale",scaleFactor)
+    sim.setFloatSignal("center_x", xPos)
+    sim.setFloatSignal("center_y", yPos)
+    sim.setFloatSignal("center_z", zPos)
+    sim.setStringSignal("target_pos_theta", target_pos_theta)
+    sim.scaleObject(goalHandle,scaleFactor,scaleFactor,scaleFactor)
+	simUI.destroy(ui)
+    sim.startSimulation()
+    sim.callScriptFunction('moveTarget',targetScriptHandle,1)
+    fileSettings=io.open("./jaco_data/"..filename..'_settings.tdt', "w+")
+    local settingsWrite = (tostring(num_target).."\t"
+        ..tostring(scaleFactor*0.1).."\t"..tostring(targetDistance).."\t"
+        ..tostring(targets_to_end).."\t"..tostring(xPos).."\t"
+        ..tostring(yPos).."\t"..tostring(zPos).."\t"
+        ..tostring(stall_time).."\t")
+    fileSettings:write(settingsWrite)
+    fileSettings:close()
+    corout = coroutine.create(coroutineMain)
+    coroutRun = 1
+    -- sim.setFloatSignal('waiting',0)
+end
+
+function sysCall_init()
+    sim.setThreadAutomaticSwitch(false)
+    coroutRun = 0
+	targetHandle=sim.getObject("/Jaco_target")
+    tipHandle=sim.getObject("/Jaco/Jaco_tip")
+    targetScriptHandle=sim.getScriptHandle(1,"Jaco_target")
+    goalHandle = sim.getObject("/Move_target")
+    startPos = sim.getObjectPosition(goalHandle,-1)
+    simJoint1=sim.getObjectHandle('Jaco_joint1')
+    simJoint2=sim.getObjectHandle('Jaco_joint2')
+    simJoint3=sim.getObjectHandle('Jaco_joint3')
+    simJoint4=sim.getObjectHandle('Jaco_joint4')
+    simJoint5=sim.getObjectHandle('Jaco_joint5')
+    simJoint6=sim.getObjectHandle('Jaco_joint6')
+	patientName = "test"
+	trial = "0"
+	filename = nil
+	xPos = 0.0
+    yPos = 0.6162
+	zPos = 1.1
+    scaleFactor = 1.0
+    targetDistance = 0.2
+    initialized = false
+    num_target = 8
+    stall_time = 0.5
+    targets_to_end = 10
+    file = nil
+    target_pos_theta = ""
+	ui=simUI.create([[<ui>
+        <label text="Patient name" />
+        <edit value="" on-editing-finished="updatePatient" />
+        <label text="Trial" />
+        <edit value="0" on-editing-finished="updateTrial" />
+        <label text="Number of target positions" />
+        <edit value="8" on-editing-finished="updateTargets" />
+        <button text="Show Angles" on-click="DisplayAngles" />
+        <label text="Array of target angles" />
+        <edit id="140798" value="" on-editing-finished="UpdateTargetAngles" />
+        <label text="Radius of targets" />
+        <edit value="0.1" on-editing-finished="updateScale" />
+        <label text="Radius of target circle" />
+        <edit value="0.2" on-editing-finished="updateCircle" />
+        <label text="Number of targets" />
+        <edit value="10" on-editing-finished="updateTotalTargets" />
+		<label text="x pos" />
+		<edit value="0.0" on-editing-finished="updateX" />
+        <label text="y pos" />
+		<edit value="0.6162" on-editing-finished="updateY" />
+		<label text="z pos" />
+		<edit value="1.1" on-editing-finished="updateZ" />
+        <label text="Seconds to stall at a target" />
+        <edit value="0.5" on-editing-finished="updateStallTime" />
+		<button text="Confirm" on-click="confirmJaco" />
+	</ui>]])
+    sim.setFloatSignal('run_ik',1)
+    sim.pauseSimulation()
+    
+    -- sim.setFloatSignal('waiting',1)
+end
+
+function sysCall_actuation()
+    if initialized then
+        local touchFrame = 0
+        if sim.getFloatSignal("touch_frame") == 1 then
+            touchFrame = 1
+        end
+        local tipPos = sim.getObjectPosition(tipHandle,-1)
+        local timeNow = sim.getSimulationTime() - expStartTime
+        local toWrite = (tostring(timeNow).."\t"..tostring(tipPos[1]).."\t"
+        ..tostring(tipPos[2]).."\t"..tostring(tipPos[3]).."\t"
+        ..tostring(sim.getJointPosition(simJoint1)).."\t"
+        ..tostring(sim.getJointPosition(simJoint2)).."\t"
+        ..tostring(sim.getJointPosition(simJoint3)).."\t"
+        ..tostring(sim.getJointPosition(simJoint4)).."\t"
+        ..tostring(sim.getJointPosition(simJoint5)).."\t"
+        ..tostring(sim.getJointPosition(simJoint6)).."\t"..tostring(touchFrame).."\n")
+        file:write(toWrite)
+        sim.setFloatSignal("touch_frame",0)
+        
+    elseif coroutRun == 1 then
+        if coroutine.status(corout)~='dead' then
+            local ok,errorMsg=coroutine.resume(corout)
+            if errorMsg then
+                error(debug.traceback(corout,errorMsg),2)
+            end
+        end
+    end
+end
+
+function sysCall_sensing()
+    -- put your sensing code here
+end
+
+function sysCall_cleanup()
+    sim.setObjectPosition(goalHandle,-1,startPos)
+    sim.scaleObject(goalHandle,1/scaleFactor,1/scaleFactor,1/scaleFactor)
+    if file ~= nil then
+        file:close()
+    end
+end
+
+-- See the user manual or the available code snippets for additional callback functions and details
+
+function coroutineMain()
+    print('5')
+    sim.wait(1)
+    print('4')
+    sim.wait(1)
+    print('3')
+    sim.wait(1)
+    print('2')
+    sim.wait(1)
+    print('1')
+    sim.wait(1)
+    print('start experiment')
+    sim.setFloatSignal('run_ik',0)
+    initialized = true
+    expStartTime = sim.getSimulationTime()
+    sim.switchThread()
+end
+
+-- See the user manual or the available code snippets for additional callback functions and details
