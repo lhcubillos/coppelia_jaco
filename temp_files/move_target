@@ -61,6 +61,10 @@ function DisplayAngles(ui, id)
     simUI.setEditValue(ui,140798,target_angle_txt)
 end
 
+function SkipTarget(ui, id)
+    sim.setFloatSignal('skip_target',1)
+end
+
 function confirmJaco(ui,id)
     if (patientName == "") or (patientName == nil) then
         patientName = "test"
@@ -194,23 +198,27 @@ function sysCall_cleanup()
     sim.scaleObject(goalHandle,1/scaleFactor,1/scaleFactor,1/scaleFactor)
     if file ~= nil then
         file:close()
+        -- simUI.destroy(ui)
     end
 end
 
 -- See the user manual or the available code snippets for additional callback functions and details
 
 function coroutineMain()
-    print('5')
+    ui=simUI.create([[<ui>
+        <edit id="140723" value="Start Experiment in: 5"/>
+        <button text="Skip Current Target" on-click="SkipTarget" />
+	</ui>]])
     sim.wait(1)
-    print('4')
+    simUI.setEditValue(ui,140723,"Start Experiment in: 4")
     sim.wait(1)
-    print('3')
+    simUI.setEditValue(ui,140723,"Start Experiment in: 3")
     sim.wait(1)
-    print('2')
+    simUI.setEditValue(ui,140723,"Start Experiment in: 2")
     sim.wait(1)
-    print('1')
+    simUI.setEditValue(ui,140723,"Start Experiment in: 1")
     sim.wait(1)
-    print('start experiment')
+    simUI.setEditValue(ui,140723,"Experiment in Progress")
     sim.setFloatSignal('run_ik',0)
     initialized = true
     expStartTime = sim.getSimulationTime()

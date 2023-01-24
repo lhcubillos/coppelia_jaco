@@ -81,6 +81,7 @@ function moveTarget(force)
     center_y = sim.getFloatSignal('center_y')
     center_z = sim.getFloatSignal('center_z')
     target_pos_theta = sim.getStringSignal('target_pos_theta')
+    skip_target = sim.getFloatSignal('skip_target')
     
     if scale == nil then
         scale = 1
@@ -111,8 +112,15 @@ function moveTarget(force)
         end
     end
 
-    if distance < 0.05*scale then
-        if sim.getSystemTimeInMs(-2)-current_stall_time >= (stall_time*1000) then
+    message,auxiliaryData=simGetSimulatorMessage()
+    if (message==sim_message_keypress) then
+        if (auxiliaryData[1]==string.byte('s')) then
+            skip_target = true
+        end
+    end
+
+    if distance < 0.05*scale or skip_target == 1.0 then
+        if sim.getSystemTimeInMs(-2)-current_stall_time >= (stall_time*1000) or skip_target == 1.0 then
             sim.setFloatSignal("touch_frame",1)
             targetsTouched = targetsTouched+1
             print("here")
@@ -133,6 +141,7 @@ function moveTarget(force)
 			center_z + math.sin(pos_rand+math.pi/2)*targetDistance}
             print(newPosition)
             sim.setObjectPosition(targetHandle,-1,newPosition)
+            sim.clearFloatSignal('skip_target')
         end
         sim.callScriptFunction("openHand",gripperHandle)
     else
