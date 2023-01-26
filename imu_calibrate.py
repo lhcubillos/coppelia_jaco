@@ -69,7 +69,9 @@ class CalibrateImu:
         try:
             while not self.should_stop:
                 if (time.time() - self.start_time) >= self.stop_time:
-                    self.should_stop = True 
+                    self.should_stop = True
+                if self.should_stop:
+                    break
         except KeyboardInterrupt:
             self.should_stop = True
         self.zcm.stop()
@@ -84,7 +86,13 @@ class CalibrateImu:
         # then, build the PCA transformation matrix, normalize/center them, and save to filename.pkl
         data = np.genfromtxt(filename[:-4]+".calib",delimiter=",")
         data_pca = PCA(n_components=2)
-        data_pca.fit(data)
+        try:
+            data_pca.fit(data)
+        except:
+            self.zcm.stop()
+            self.window.destroy()
+            sys.exit()
+
         pca_transform=data_pca.transform(np.identity(8))
         norms = np.linalg.norm(pca_transform,2,0)
         variances = data_pca.explained_variance_
@@ -111,6 +119,9 @@ class CalibrateImu:
         else:
             self.should_stop = True
             self.cancelled = True
+            self.zcm.stop()
+            self.f.close()
+            self.window.destroy()
             
         
     def init_process(self,filename):
