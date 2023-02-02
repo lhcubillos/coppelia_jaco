@@ -112,18 +112,18 @@ function moveTarget(force)
         end
     end
 
-    message,auxiliaryData=simGetSimulatorMessage()
-    if (message==sim_message_keypress) then
-        if (auxiliaryData[1]==string.byte('s')) then
-            skip_target = true
-        end
-    end
+    -- message,auxiliaryData=sim.getSimulatorMessage()
+    -- if (message==sim.message_keypress) then
+    --     if (auxiliaryData[1]==string.byte('s')) then
+    --         skip_target = true
+    --     end
+    -- end
 
     if distance < 0.05*scale or skip_target == 1.0 then
         if sim.getSystemTimeInMs(-2)-current_stall_time >= (stall_time*1000) or skip_target == 1.0 then
             sim.setFloatSignal("touch_frame",1)
             targetsTouched = targetsTouched+1
-            print("here")
+            print("here target_count:", targetsTouched)
 
             targetsToEnd = sim.getFloatSignal("targets_to_end")
         

@@ -198,7 +198,7 @@ function sysCall_cleanup()
     sim.scaleObject(goalHandle,1/scaleFactor,1/scaleFactor,1/scaleFactor)
     if file ~= nil then
         file:close()
-        -- simUI.destroy(ui)
+        simUI.destroy(ui)
     end
 end
 
