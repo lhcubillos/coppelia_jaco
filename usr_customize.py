@@ -7,7 +7,6 @@ from zerocm import ZCM
 import sys
 import pickle as pk
 import tkinter as tk
-import threading
 
 from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
@@ -33,7 +32,6 @@ class LivePlotCust:
     FREQUENCY = 30
 
     def __init__(self, channel, filename):
-        self.lock = threading.Lock()
         self.fig = None
         self.ax = None
         self.dot = None
@@ -177,51 +175,47 @@ class LivePlotCust:
         self.canvas.draw()
         self.canvas.get_tk_widget().pack()
         #plt.show(block=False)
-        
-
-        
+ 
         # ZCM
         self.zcm.subscribe(self.channel, imus_t, self.handle_messages)
 
     def handle_messages(self, channel, msg):
-        with self.lock:
-            sense1 = float(self.slider1.get())
-            sense2 = float(self.slider2.get())
-            self.vel_tolerance = float(self.slider3.get())
-        
-            self.cust = np.array([[sense1,0.0],[0.0,sense2]])
-        
-            if self.reverse:
-                self.cust = np.matmul(self.cust,np.array([[0.0,1.0],[1.0,0.0]]))
-            if self.flip1:
-                self.cust = np.matmul(self.cust,np.array([[-1.0,0.0],[0.0,1.0]]))
-            if self.flip2:
-                self.cust = np.matmul(self.cust,np.array([[1.0,0.0],[0.0,-1.0]]))
-        
-            self.pca_cust = np.matmul(self.pca,self.cust)
-            if self.last_msg_timestamp is not None:
-                elapsed = time.time() - self.last_msg_timestamp
-                if elapsed < 1 / self.frequency:
-                    return
-            self.last_msg_timestamp = time.time()
-            if self.first_time is None:
-                self.first_time = msg.utime
-            if msg.imu_values[0] is not None:
-                self.imu_data = np.array([
-                msg.imu_values[0].pitch,msg.imu_values[0].roll,\
-                msg.imu_values[1].pitch,msg.imu_values[1].roll,\
-                msg.imu_values[2].pitch,msg.imu_values[2].roll,\
-                msg.imu_values[3].pitch,msg.imu_values[3].roll
-            ]).reshape(1,-1)
-                [self.x,__,self.y] = compute_velocity(self.imu_data,self.pca_cust,self.vel_tolerance)
-                self.dot.set_data(np.array(self.x), np.array(self.y))
-                # self.canvas.draw()
-                # self.window.update()
+        self.sense1 = float(self.slider1.get())
+        self.sense2 = float(self.slider2.get())
+        self.vel_tolerance = float(self.slider3.get())
+    
+        self.cust = np.array([[self.sense1,0.0],[0.0,self.sense2]])
+    
+        if self.reverse:
+            self.cust = np.matmul(self.cust,np.array([[0.0,1.0],[1.0,0.0]]))
+        if self.flip1:
+            self.cust = np.matmul(self.cust,np.array([[-1.0,0.0],[0.0,1.0]]))
+        if self.flip2:
+            self.cust = np.matmul(self.cust,np.array([[1.0,0.0],[0.0,-1.0]]))
+    
+        self.pca_cust = np.matmul(self.pca,self.cust)
+        if self.last_msg_timestamp is not None:
+            elapsed = time.time() - self.last_msg_timestamp
+            if elapsed < 1 / self.frequency:
+                return
+        self.last_msg_timestamp = time.time()
+        if self.first_time is None:
+            self.first_time = msg.utime
+        if msg.imu_values[0] is not None:
+            self.imu_data = np.array([
+            msg.imu_values[0].pitch,msg.imu_values[0].roll,\
+            msg.imu_values[1].pitch,msg.imu_values[1].roll,\
+            msg.imu_values[2].pitch,msg.imu_values[2].roll,\
+            msg.imu_values[3].pitch,msg.imu_values[3].roll
+        ]).reshape(1,-1)
+            [self.x,__,self.y] = compute_velocity(self.imu_data,self.pca_cust,self.vel_tolerance)
+            self.dot.set_data(np.array(self.x), np.array(self.y))
+            self.canvas.draw()
+            # self.window.update()
     
     def draw_plot(self):
-        with self.lock:
-            self.canvas.draw()
-            self.window.after(LivePlotCust.FREQUENCY, self.draw_plot)
+        self.window.update()
+        self.window.after(LivePlotCust.FREQUENCY, self.draw_plot)
     
     def run(self):
         self.init_process()
