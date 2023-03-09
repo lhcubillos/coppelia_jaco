@@ -75,12 +75,11 @@ class CalibrateImu:
         except KeyboardInterrupt:
             self.should_stop = True
         self.zcm.stop()
-        self.f.write("\n")
-        self.f.close()
         if self.cancelled:
-            self.cancelled = False
             self.window.destroy()
             return
+        self.f.write("\n")
+        self.f.close()
         
         # after data collection, process data via PCA to obtain first two principle components
         # then, build the PCA transformation matrix, normalize/center them, and save to filename.pkl
@@ -104,13 +103,10 @@ class CalibrateImu:
         pca_dump = [pca_normalized, None, 0.2]
         f = open(filename,"wb")
         pk.dump(pca_dump, f)
-        f.close
+        f.close()
         
         # finally, close the calibration window and launch the customizer automatically on filename.pkl
         self.window.destroy()
-        print("Calibration done, opening customizer")
-        subprocess.Popen(['python3','usr_customize.py',self.filename])
-        sys.exit()
 
     def cancelCalib(self):
         # if cancel is clicked, either stop running or close the window without running
@@ -122,8 +118,7 @@ class CalibrateImu:
             self.zcm.stop()
             self.f.close()
             self.window.destroy()
-            
-        
+
     def init_process(self,filename):
     	# Open file to save to
         self.filename = filename
@@ -162,16 +157,15 @@ class CalibrateImu:
                 if i != 3:
                     self.f.write(",")
             self.f.write("\n")
-            
 
     def run(self,filename):
         self.init_process(filename)
         self.zcm.start()
         self.window.mainloop()
-        
-        
-        
-        
+        if not self.cancelled:
+            print("Calibration done, opening customizer")
+            subprocess.Popen(['python3','usr_customize.py',self.filename])
+        sys.exit()
 
 if __name__ == "__main__":
     # Filename is recieved as first argument
