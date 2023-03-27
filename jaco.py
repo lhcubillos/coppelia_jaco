@@ -14,7 +14,7 @@ from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
 
 curCwd = os.getcwd()
-syspathIns = curCwd + "/../CoppeliaSim_Edu_V4_3_0_rev12_Ubuntu20_04/programming/zmqRemoteApi/clients/python"
+syspathIns = curCwd + "/../CoppeliaSim/programming/zmqRemoteApi/clients/python"
 sys.path.insert(1, syspathIns)
 
 ###########################################################################
@@ -63,6 +63,7 @@ class Simulation:
         self.pca = pca_load[0]
         self.usr_cust = pca_load[1]
         self.compute_velocity = pca_load[2]
+        self.rest = pca_load[3]
         
         # If no usr_cust matrix present, uses identity matrix (i.e. no customization)
         if self.usr_cust is None:
@@ -147,6 +148,7 @@ class Simulation:
                     # If we have new IMU data, calculate the velocity:
                     if self.imu_data is not None:
                         self.new_vel = compute_velocity(self.imu_data,self.pca_cust,self.compute_velocity)
+                        self.new_vel = self.new_vel - self.rest
                     
                     # If that velocity is not zero and the process is not shutting down,
                     # compress it and inject it into CS:

@@ -37,7 +37,6 @@ class LivePlotCust:
         self.dot = None
         self.axbackground = None
         self.maxspeed = 0.2
-        self.vel_tolerance = 0.2
         self.y = 0.0
         self.x = 0.0
         self.first_time = None
@@ -48,6 +47,8 @@ class LivePlotCust:
         pca_load = pk.load(f)
         self.pca = pca_load[0]
         self.cust = pca_load[1]
+        self.vel_tolerance = pca_load[2]
+        self.rest_vel = pca_load[3]
         if self.cust is None:
             self.cust = np.identity(2)
         f.close
@@ -55,6 +56,11 @@ class LivePlotCust:
 
         self.canvas = None
         self.window = None
+        self.graph_frame = None
+        self.graph_frame_nested = None
+        self.custom_frame = None
+        self.custom_frame_nested = None
+
         self.slider1 = None
         self.slidetext1 = None
         self.slider2 = None
@@ -99,6 +105,20 @@ class LivePlotCust:
         self.slidetext3.delete("0.00","end")
         self.slidetext3.delete("0.00")
         return 'break'
+    
+    def parse4(self,event):
+        text = float(self.slidetext4.get("0.00","end").strip())
+        self.slider4.set(text)
+        self.slidetext4.delete("0.00","end")
+        self.slidetext4.delete("0.00")
+        return 'break'
+    
+    def parse5(self,event):
+        text = float(self.slidetext5.get("0.00","end").strip())
+        self.slider5.set(text)
+        self.slidetext5.delete("0.00","end")
+        self.slidetext5.delete("0.00")
+        return 'break'
         
     def press1(self):
         if self.reverse:
@@ -121,7 +141,7 @@ class LivePlotCust:
     def press4(self):
         self.accept = True
         out_f = open(self.filename[:-4]+"_cust.pkl","wb")
-        pk.dump([self.pca,self.cust,self.vel_tolerance],out_f)
+        pk.dump([self.pca,self.cust,self.vel_tolerance,self.rest_vel],out_f)
         print("Saved user customizations to "+self.filename[:-4]+"_cust.pkl")
         out_f.close()
         self.window.destroy()
@@ -134,36 +154,58 @@ class LivePlotCust:
         self.window = tk.Tk()
         self.window.title('User Customization')
         self.window.geometry('1000x500')
+
+        self.graph_frame = tk.Frame(master=self.window)
+        self.graph_frame_nested = tk.Frame(master=self.graph_frame)
+
+        self.custom_frame = tk.Frame(master=self.window)
+        self.custom_frame_nested = tk.Frame(master=self.custom_frame)
         
-        self.slider1 = tk.Scale(self.window,label='Sensitivity 1',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider1 = tk.Scale(self.custom_frame_nested,label='Sensitivity 1',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider1.set(abs(self.cust[0,0])+(self.cust[0,1]))
-        self.slider2 = tk.Scale(self.window,label='Sensitivity 2',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
+        self.slider2 = tk.Scale(self.custom_frame_nested,label='Sensitivity 2',digits=3,resolution=0.0,from_=0.1,to=10.0,orient='horizontal')
         self.slider2.set(abs(self.cust[1,0])+(self.cust[1,1]))
-        self.slider3 = tk.Scale(self.window,label='Toleranc_mps',digits=3,resolution=0.00,from_=0.01,to=1.00,orient='horizontal')
+        self.slider3 = tk.Scale(self.custom_frame_nested,label='Toleranc_mps',digits=3,resolution=0.00,from_=0.01,to=1.00,orient='horizontal')
         self.slider3.set(abs(0.20))
-        self.slidetext1 = tk.Text(self.window,width=10,height=1)
+        self.slider4 = tk.Scale(self.custom_frame_nested,label='Rest 1',digits=3,resolution=0.00,from_=-1.00,to=1.00,orient='horizontal')
+        self.slider4.set(abs(0.00))
+        self.slider5 = tk.Scale(self.custom_frame_nested,label='Rest 2',digits=3,resolution=0.00,from_=-1.00,to=1.00,orient='horizontal')
+        self.slider5.set(abs(0.00))
+        self.slidetext1 = tk.Text(self.custom_frame_nested,width=10,height=1)
         self.slidetext1.bind("<Return>",self.parse1)
-        self.slidetext2 = tk.Text(self.window,width=10,height=1)
+        self.slidetext2 = tk.Text(self.custom_frame_nested,width=10,height=1)
         self.slidetext2.bind("<Return>",self.parse2)
-        self.slidetext3 = tk.Text(self.window,width=10,height=1)
+        self.slidetext3 = tk.Text(self.custom_frame_nested,width=10,height=1)
         self.slidetext3.bind("<Return>",self.parse3)
+        self.slidetext4 = tk.Text(self.custom_frame_nested,width=10,height=1)
+        self.slidetext4.bind("<Return>",self.parse4)
+        self.slidetext5 = tk.Text(self.custom_frame_nested,width=10,height=1)
+        self.slidetext5.bind("<Return>",self.parse5)
         
-        self.button1 = tk.Button(self.window,text='Switch motions 1 and 2',command=self.press1)
-        self.button2 = tk.Button(self.window,text='Reverse axis 1',command=self.press2)
-        self.button3 = tk.Button(self.window,text='Reverse axis 2',command=self.press3)
-        self.button4 = tk.Button(self.window,text='Accept',command=self.press4)
-        self.button5 = tk.Button(self.window,text='Cancel',command=self.press5)
+        self.button1 = tk.Button(self.custom_frame_nested,text='Switch motions 1 and 2',command=self.press1)
+        self.button2 = tk.Button(self.custom_frame_nested,text='Reverse axis 1',command=self.press2)
+        self.button3 = tk.Button(self.custom_frame_nested,text='Reverse axis 2',command=self.press3)
+        self.button4 = tk.Button(self.custom_frame_nested,text='Accept',command=self.press4)
+        self.button5 = tk.Button(self.custom_frame_nested,text='Cancel',command=self.press5)
         self.slider1.pack()
         self.slidetext1.pack()
         self.slider2.pack()
         self.slidetext2.pack()
         self.slider3.pack()
         self.slidetext3.pack()
+        self.slider4.pack()
+        self.slidetext4.pack()
+        self.slider5.pack()
+        self.slidetext5.pack()
         self.button1.pack()
         self.button2.pack()
         self.button3.pack()
         self.button4.pack()
         self.button5.pack()
+
+        self.custom_frame.pack(side=tk.LEFT, expand=True)
+        self.custom_frame_nested.pack(expand=True)
+
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
         (self.dot,) = self.ax.plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
@@ -171,9 +213,11 @@ class LivePlotCust:
         self.ax.set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
         
         #self.axbackground = self.fig.canvas.copy_from_bbox(self.ax.bbox)
-        self.canvas = FigureCanvasTkAgg(self.fig,master=self.window)
+        self.canvas = FigureCanvasTkAgg(self.fig,master=self.graph_frame_nested)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack()
+        self.graph_frame.pack(fill=tk.BOTH, side=tk.RIGHT, expand=True)
+        self.graph_frame_nested.pack(expand=True)
         #plt.show(block=False)
  
         # ZCM
@@ -183,6 +227,8 @@ class LivePlotCust:
         self.sense1 = float(self.slider1.get())
         self.sense2 = float(self.slider2.get())
         self.vel_tolerance = float(self.slider3.get())
+        self.rest_vel[0] = float(self.slider4.get())
+        self.rest_vel[2] = float(self.slider5.get())
     
         self.cust = np.array([[self.sense1,0.0],[0.0,self.sense2]])
     
@@ -209,6 +255,10 @@ class LivePlotCust:
             msg.imu_values[3].pitch,msg.imu_values[3].roll
         ]).reshape(1,-1)
             [self.x,__,self.y] = compute_velocity(self.imu_data,self.pca_cust,self.vel_tolerance)
+            print("initial: {}, {}".format(self.x, self.y))
+            self.x = self.x - self.rest_vel[0]
+            self.y = self.y - self.rest_vel[2]
+            print("final: {}, {}".format(self.x, self.y))
             self.dot.set_data(np.array(self.x), np.array(self.y))
             self.canvas.draw()
             # self.window.update()
