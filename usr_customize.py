@@ -13,6 +13,7 @@ from zcmtypes.euler_t import euler_t
 
 from collections import deque
 from imu_processing import compute_velocity
+from control_modes import ControlModesUI
 
 
 ###########################################################################
@@ -32,6 +33,10 @@ class LivePlotCust:
     FREQUENCY = 30
 
     def __init__(self, channel, filename):
+
+        self.cm = ControlModesUI()
+        self.cm.init_process()
+
         self.fig = None
         self.ax = None
         self.dot = None
@@ -144,10 +149,12 @@ class LivePlotCust:
         pk.dump([self.pca,self.cust,self.vel_tolerance,self.rest_vel],out_f)
         print("Saved user customizations to "+self.filename[:-4]+"_cust.pkl")
         out_f.close()
+        self.cm.window.destroy()
         self.window.destroy()
     
     def press5(self):
         self.accept = False
+        self.cm.window.destroy()
         self.window.destroy()
         
     def init_process(self):
@@ -255,16 +262,17 @@ class LivePlotCust:
             msg.imu_values[3].pitch,msg.imu_values[3].roll
         ]).reshape(1,-1)
             [self.x,__,self.y] = compute_velocity(self.imu_data,self.pca_cust,self.vel_tolerance)
-            print("initial: {}, {}".format(self.x, self.y))
             self.x = self.x - self.rest_vel[0]
             self.y = self.y - self.rest_vel[2]
-            print("final: {}, {}".format(self.x, self.y))
-            self.dot.set_data(np.array(self.x), np.array(self.y))
+            vel = self.cm.update_velocity([self.x,0.0,self.y])
+            self.dot.set_data(np.array(vel[0]), np.array(vel[2]))
             self.canvas.draw()
             # self.window.update()
     
     def draw_plot(self):
         self.window.update()
+        self.cm.update_color()
+        self.cm.window.update()
         self.window.after(LivePlotCust.FREQUENCY, self.draw_plot)
     
     def run(self):
@@ -279,6 +287,8 @@ class LivePlotCust:
         self.zcm.stop()
         if self.accept:
             pass
+        self.cm.window.destroy()
+        self.window.destroy()
         sys.exit()
 
 

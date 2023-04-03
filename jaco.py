@@ -12,6 +12,7 @@ import os
 from zerocm import ZCM
 from zcmtypes.imus_t import imus_t
 from zcmtypes.euler_t import euler_t
+from control_modes import ControlModesUI
 
 curCwd = os.getcwd()
 syspathIns = curCwd + "/../CoppeliaSim/programming/zmqRemoteApi/clients/python"
@@ -47,6 +48,8 @@ class Simulation:
         self.sim = self.client.getObject('sim')
         self.paused = None
         self.jaco_target = self.sim.getScriptHandle(1,'Jaco_target')
+
+        self.cm = ControlModesUI()
         
         # Initializes runtime parameters
         self.curr_vel = [0.0, 0.0, 0.0]
@@ -126,6 +129,7 @@ class Simulation:
         
 
     def stop(self):
+        self.cm.window.destroy()
         self.imu_write_f.close()
         # When done, stop ZCM and then simulation
         self.zcmL.stop()
@@ -140,6 +144,7 @@ class Simulation:
             self.initialize_ui()
             self.window.mainloop()
             self.start()
+            self.cm.init_process()
             while not self.should_stop:
                 try:
                     start_time = time.time()
@@ -148,7 +153,13 @@ class Simulation:
                     # If we have new IMU data, calculate the velocity:
                     if self.imu_data is not None:
                         self.new_vel = compute_velocity(self.imu_data,self.pca_cust,self.compute_velocity)
-                        self.new_vel = self.new_vel - self.rest
+                        self.new_vel[0] = self.new_vel[0] - self.rest[0]
+                        self.new_vel[1] = self.new_vel[1] - self.rest[1]
+                        self.new_vel[2] = self.new_vel[2] - self.rest[2]
+                        vel = self.cm.update_velocity(self.new_vel)
+                        self.cm.update_color()
+                        self.cm.window.update()
+                        self.new_vel = vel
                     
                     # If that velocity is not zero and the process is not shutting down,
                     # compress it and inject it into CS:
