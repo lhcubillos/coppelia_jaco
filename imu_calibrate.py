@@ -72,6 +72,8 @@ class CalibrateImu:
                     self.should_stop = True
                 if self.should_stop:
                     break
+                    
+                self.window.after(100, self.updateTime)
         except KeyboardInterrupt:
             self.should_stop = True
         self.zcm.stop()
@@ -108,6 +110,11 @@ class CalibrateImu:
         
         # finally, close the calibration window and launch the customizer automatically on filename.pkl
         self.window.destroy()
+    
+    def updateTime(self):
+        time_remaining = max(0, self.stop_time - (time.time() - self.start_time))
+        time_remaining_str = f"Time Remaining: {time_remaining:.2f}"
+        self.time_label.config(text=time_remaining_str)
 
     def cancelCalib(self):
         # if cancel is clicked, either stop running or close the window without running
@@ -132,10 +139,12 @@ class CalibrateImu:
         self.text = tk.Text(self.window,width=10,height=1)
         self.text.insert("0.0","60.0")
         self.text.bind("<Return>",self.parseText)
+        self.time_label = tk.Label(self.window, text="")
         self.button = tk.Button(self.window,text='Start Calibration',command=self.threading)
         self.button2 = tk.Button(self.window,text='Cancel',command=self.cancelCalib)
         self.label.pack()
         self.text.pack()
+        self.time_label.pack()
         self.button.pack()
         self.button2.pack()
         self.window.geometry('800x500')
