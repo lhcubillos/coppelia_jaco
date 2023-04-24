@@ -40,6 +40,7 @@ class LivePlotCust:
         self.fig = None
         self.ax = None
         self.dot = None
+        self.dot2 = None
         self.axbackground = None
         self.maxspeed = 0.2
         self.y = 0.0
@@ -142,7 +143,7 @@ class LivePlotCust:
             self.flip2 = False
         else:
             self.flip2 = True
-        
+
     def press4(self):
         self.accept = True
         out_f = open(self.filename[:-4]+"_cust.pkl","wb")
@@ -160,7 +161,7 @@ class LivePlotCust:
     def init_process(self):
         self.window = tk.Tk()
         self.window.title('User Customization')
-        self.window.geometry('1000x500')
+        self.window.geometry('2048x1024')
 
         self.graph_frame = tk.Frame(master=self.window)
         self.graph_frame_nested = tk.Frame(master=self.graph_frame)
@@ -213,11 +214,21 @@ class LivePlotCust:
         self.custom_frame.pack(side=tk.LEFT, expand=True)
         self.custom_frame_nested.pack(expand=True)
 
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(1, 1, 1)
-        (self.dot,) = self.ax.plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
-        self.ax.set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
-        self.ax.set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.fig, self.ax = plt.subplots(2, 1)
+
+        # setup plot for XZ plane - FRONT view of motion
+        (self.dot,) = self.ax[1].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
+        self.ax[1].set_xlabel('x')
+        self.ax[1].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.ax[1].set_ylabel('z')
+        self.ax[1].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
+
+        # setup plot for ZY plane - SIDE view of motion
+        (self.dot2,) = self.ax[0].plot([],marker="x", markersize=15, markeredgecolor="black", markerfacecolor="black")
+        self.ax[0].set_xlabel('y')
+        self.ax[0].set_xlim(-self.maxspeed-0.1,self.maxspeed+0.1)
+        self.ax[0].set_ylabel('')
+        self.ax[0].set_ylim(-self.maxspeed-0.1,self.maxspeed+0.1)
         
         #self.axbackground = self.fig.canvas.copy_from_bbox(self.ax.bbox)
         self.canvas = FigureCanvasTkAgg(self.fig,master=self.graph_frame_nested)
@@ -226,7 +237,7 @@ class LivePlotCust:
         self.graph_frame.pack(fill=tk.BOTH, side=tk.RIGHT, expand=True)
         self.graph_frame_nested.pack(expand=True)
         #plt.show(block=False)
- 
+
         # ZCM
         self.zcm.subscribe(self.channel, imus_t, self.handle_messages)
 
@@ -265,7 +276,8 @@ class LivePlotCust:
             self.x = self.x - self.rest_vel[0]
             self.y = self.y - self.rest_vel[2]
             vel = self.cm.update_velocity([self.x,0.0,self.y])
-            self.dot.set_data(np.array(vel[0]), np.array(vel[2]))
+            self.dot.set_data(np.array(vel[0]), np.array(vel[1]))
+            self.dot2.set_data(np.array(vel[2]), np.array(0.0))
             self.canvas.draw()
             # self.window.update()
     

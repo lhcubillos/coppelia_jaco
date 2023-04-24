@@ -156,7 +156,8 @@ class Simulation:
                         self.new_vel[0] = self.new_vel[0] - self.rest[0]
                         self.new_vel[1] = self.new_vel[1] - self.rest[1]
                         self.new_vel[2] = self.new_vel[2] - self.rest[2]
-                        vel = self.cm.update_velocity(self.new_vel)
+                        temp_vel = self.cm.update_velocity(self.new_vel)
+                        vel = [-temp_vel[0], temp_vel[2], temp_vel[1]]
                         self.cm.update_color()
                         self.cm.window.update()
                         self.new_vel = vel

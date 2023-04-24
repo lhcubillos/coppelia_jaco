@@ -7,9 +7,9 @@ class PlotData:
     def __init__(self, folderpath):
         self.file = None
         self.folder_path = folderpath
-        # self.patient_status = "patient"
+        # self.patient_status = "Patient"
         # self.patient_id = ["DC013123", "WL020223", "SH020323", "CR020923", "NJ020923", "MG021323", "BW021423", "DD021723", "RM031023", "JP030223", "DM031723", "RW032323", "BC032723"]
-        self.patient_status = "healthy"
+        self.patient_status = "Healthy"
         self.patient_id = ["CB031323", "PC031523", "TB031623", "RG031623", "JN032023"] #, "JE032023"]
         self.string_to_match = ['pre_test', 'training_1_1', 'training_1_2', 'training_1_3', 'training_1_4', 'mid_test', 
         'training_2_1', 'training_2_2', 'training_2_3', 'training_2_4', 'post_test']

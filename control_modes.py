@@ -9,7 +9,7 @@ class ControlModesUI:
         self.custom_frame = None
         self.tolerance = 0.1
         self.current_state = 1
-        self.num_modes = 5
+        self.num_modes = 4
         self.prev_vel = [0.0, 0.0, 0.0]
 
     def init_process(self):
@@ -50,6 +50,10 @@ class ControlModesUI:
             return [vel[0], 0.0, 0.0]
         if self.current_state == 2:
             return [0.0, 0.0, vel[0]]
+        if self.current_state == 3:
+            return [0.0, vel[0], 0.0]
+        if self.current_state == 4:
+            return [0.0, 0.0, vel[0] * 10]
         return [0.0, 0.0, 0.0]
 
     def update_color(self):
