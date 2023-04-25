@@ -25,6 +25,10 @@ def compute_velocity(imu_data,pca,vel_tolerance):
         if value_within_tolerance(vel, vel_tolerance):
             vel[2] = 0.0
             vel[0] = 0.0
+        # if vel[2] > vel[0]:
+        #     vel[0] = 0.0
+        # else:
+        #     vel[2] = 0.0
     return vel
 
 # Check if calculated velocity is within the "deadzone" tolerance; if so,

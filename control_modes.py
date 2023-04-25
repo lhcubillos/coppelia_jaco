@@ -7,10 +7,12 @@ class ControlModesUI:
         self.window = None
         self.reverse = False
         self.custom_frame = None
-        self.tolerance = 0.1
+        self.tolerance = 0.05
+        self.cut_off = 0.1
         self.current_state = 1
         self.num_modes = 4
         self.prev_vel = [0.0, 0.0, 0.0]
+        self.update_vel = [0.0, 0.0, 0.0]
 
     def init_process(self):
         self.window = tk.Tk()
@@ -20,8 +22,8 @@ class ControlModesUI:
         self.custom_frame = tk.Frame(master=self.window)
 
         self.button1 = tk.Button(self.custom_frame,text='X',bg='green',height=2,width=50)
-        self.button2 = tk.Button(self.custom_frame,text='Y',bg='red',height=2,width=50)
-        self.button3 = tk.Button(self.custom_frame,text='Z',bg='red',height=2,width=50)
+        self.button2 = tk.Button(self.custom_frame,text='Z',bg='red',height=2,width=50)
+        self.button3 = tk.Button(self.custom_frame,text='Y',bg='red',height=2,width=50)
 
         self.button4 = tk.Button(self.custom_frame,text='rotate',bg='red',height=2,width=50)
         self.button5 = tk.Button(self.custom_frame,text='open/close',bg='red',height=2,width=50)
@@ -35,7 +37,9 @@ class ControlModesUI:
         self.custom_frame.pack(expand=True)
     
     def update_velocity(self, vel):
-        if (abs(self.prev_vel[2]) <= self.tolerance) and (self.prev_vel[2] != vel[2]):
+        print(vel[2])
+        if (abs(self.prev_vel[2]) <= self.tolerance) and (self.prev_vel[2] != vel[2]) and (abs(vel[2]) >= self.cut_off):
+            self.update_vel = vel
             if vel[2] < -self.tolerance:
                 self.current_state = (self.current_state + 1) % self.num_modes
                 if self.current_state == 0:
@@ -48,9 +52,9 @@ class ControlModesUI:
         self.prev_vel = vel
         if self.current_state == 1:
             return [vel[0], 0.0, 0.0]
-        if self.current_state == 2:
-            return [0.0, 0.0, vel[0]]
         if self.current_state == 3:
+            return [0.0, 0.0, vel[0]]
+        if self.current_state == 2:
             return [0.0, vel[0], 0.0]
         if self.current_state == 4:
             return [0.0, 0.0, vel[0] * 10]
